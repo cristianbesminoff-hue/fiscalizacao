@@ -327,7 +327,6 @@
             }
         }
 
-        // Função auxiliar para fazer upload de imagem para o Storage do Firebase
         async function enviarFotoStorage(fileInputId, protocolo) {
             const fileInput = document.getElementById(fileInputId);
             if (!fileInput || fileInput.files.length === 0) return "";
@@ -336,9 +335,15 @@
             const timestamp = Date.now();
             const storageRef = ref(storage, `vistorias/${protocolo}_${timestamp}_${file.name}`);
             
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadUrl = await getDownloadURL(snapshot.ref);
-            return downloadUrl;
+            try {
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadUrl = await getDownloadURL(snapshot.ref);
+                return downloadUrl;
+            } catch (error) {
+                console.error("Erro detalhado no upload do Storage:", error);
+                alert(`Erro ao enviar a foto ${file.name}: ${error.message}`);
+                throw error;
+            }
         }
 
         window.salvarVistoria = async function(modulo) {
@@ -372,7 +377,6 @@
                     situacao = document.getElementById('cli-situacao-final').value;
                     obs = document.getElementById('cli-observacoes').value;
 
-                    // Upload de cada foto do módulo cliente
                     fotosUrls.fotoDrop = await enviarFotoStorage('cli-foto-drop', protocolo);
                     fotosUrls.fotoRoldana = await enviarFotoStorage('cli-foto-roldana', protocolo);
                     fotosUrls.fotoPimentao = await enviarFotoStorage('cli-foto-pimentao', protocolo);
@@ -392,7 +396,6 @@
                     situacao = document.getElementById('rede-situacao-final').value;
                     obs = document.getElementById('rede-observacoes').value;
 
-                    // Upload de cada foto do módulo rede
                     fotosUrls.fotoCaixaExt = await enviarFotoStorage('rede-foto-caixa-ext', protocolo);
                     fotosUrls.fotoCaixaInt = await enviarFotoStorage('rede-foto-caixa-int', protocolo);
 
@@ -444,7 +447,7 @@
                 lista.sort((a,b) => b.timestamp - a.timestamp);
                 let minhas = lista.filter(i => i.usuarioId === email);
 
-                container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
+                    container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
                 minhas.forEach(i => {
                     let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
                     container.innerHTML += `
