@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Técnico - Vistorias</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        header { background: #1e293b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 15px; max-width: 700px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        textarea { resize: vertical; height: 80px; }
+        button { background: #2563eb; color: white; border: none; padding: 14px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; }
+        button:hover { background: #1d4ed8; }
+        button.sair { background: #dc2626; width: auto; padding: 8px 15px; font-size: 14px; margin-top: 0; }
+        .hidden { display: none; }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .nav-tabs button { flex: 1; margin-top: 0; padding: 10px; font-size: 14px; background: #64748b; }
+        .lista-vistorias { background: #f8fafc; border-left: 4px solid #2563eb; padding: 12px; margin-top: 10px; border-radius: 4px; font-size: 13px; }
+        .status-aprovado { color: #16a34a; font-weight: bold; }
+        .status-reprovado { color: #dc2626; font-weight: bold; }
+        .file-input { background: #f1f5f9; padding: 8px; border: 1px dashed #94a3b8; }
+        .section-info { background: #e0f2fe; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; color: #0369a1; }
+        .erro { color: #dc2626; font-size: 13px; text-align: center; margin-bottom: 10px; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 13px; color: #2563eb; cursor: pointer; }
+        .toggle-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN / CADASTRO DO TÉCNICO -->
+    <div id="area-auth" class="container" style="max-width: 400px; margin-top: 50px;">
+        <div class="card">
+            <button style="background: #64748b; margin-top:0; margin-bottom:15px; padding:8px;" onclick="window.location.href='index.html'">← Voltar ao Início</button>
+            
+            <!-- Formulário de Login -->
+            <div id="form-login">
+                <h2>Login Técnico</h2>
+                <div id="erro-login" class="erro"></div>
+                <input type="email" id="log-email" placeholder="Seu e-mail">
+                <input type="password" id="log-senha" placeholder="Senha">
+                <button onclick="fazerLoginTecnico()">Entrar</button>
+                <div class="toggle-link" onclick="alternarAuth('cadastro')">Não tem conta? Cadastre-se</div>
+            </div>
+
+            <!-- Formulário de Cadastro -->
+            <div id="form-cadastro" class="hidden">
+                <h2>Cadastro Técnico</h2>
+                <div id="msg-cadastro" class="erro"></div>
+                <input type="text" id="cad-nome" placeholder="Nome Completo">
+                <input type="email" id="cad-email" placeholder="Seu e-mail">
+                <input type="password" id="cad-senha" placeholder="Senha">
+                <button onclick="fazerCadastroTecnico()" style="background: #16a34a;">Cadastrar Conta</button>
+                <div class="toggle-link" onclick="alternarAuth('login')">Já tem conta? Faça login</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINEL DE VISTORIAS DO TÉCNICO (Oculto até logar) -->
+    <div id="area-painel" class="hidden">
+        <header>
+            <div>
+                <span id="saudacao" style="font-weight: bold;"></span>
+            </div>
+            <button class="sair" onclick="sairTecnico()">Sair</button>
+        </header>
+
+        <div class="container">
+            <div class="nav-tabs">
+                <button onclick="mudarModulo('cliente')" id="btn-mod-cliente" style="background: #2563eb;">Fiscalização Cliente</button>
+                <button onclick="mudarModulo('rede')" id="btn-mod-rede">Fiscalização Rede</button>
+            </div>
+
+            <div class="card">
+                <h3>Dados Básicos da Vistoria</h3>
+                <label>Nome do técnico de qualidade:</label>
+                <input type="text" id="tec-qualidade" placeholder="Seu nome completo" readonly>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Estado:</label>
+                        <select id="estado">
+                            <option value="SC">SC</option>
+                            <option value="RS" selected>RS</option>
+                            <option value="PR">PR</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2;">
+                        <label>Cidade Fiscalizada:</label>
+                        <input type="text" id="cidade" placeholder="Ex: Canoas, Porto Alegre">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Nº do Protocolo:</label>
+                        <input type="text" id="protocolo" placeholder="Nº protocolo ou OS">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Empresa Fiscalizada:</label>
+                        <input type="text" id="empresa" placeholder="Empresa executora">
+                    </div>
+                </div>
+
+                <label>Nome do técnico que executou o serviço:</label>
+                <input type="text" id="tec-executou" placeholder="Nome do executor">
+
+                <label>Tipo de Vistoria:</label>
+                <select id="tipo-vistoria">
+                    <option value="FTTH">FTTH</option>
+                    <option value="FTTB">FTTB</option>
+                    <option value="FTTA">FTTA</option>
+                    <option value="FTTX">FTTX</option>
+                </select>
+            </div>
+
+            <!-- MÓDULO CLIENTE -->
+            <div id="secao-cliente" class="card">
+                <h2>Módulo: Fiscalização Cliente</h2>
+                <div class="section-info">Avaliação da residência, drop, ancoragens e acabamento interno/externo.</div>
+
+                <label>12. Lançamento do Drop está correto?</label>
+                <select id="cli-lancamento-drop"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option></select>
+                <label>13. Foto Lançamento do Drop:</label>
+                <input type="file" id="cli-foto-drop" class="file-input" accept="image/*">
+
+                <label>14. Ancoragem da alça pré-formada na roldana:</label>
+                <select id="cli-ancoragem-roldana"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option><option value="N/A (FTTA)">N/A (FTTA)</option></select>
+                <label>15. Foto da ancoragem na roldana:</label>
+                <input type="file" id="cli-foto-roldana" class="file-input" accept="image/*">
+
+                <label>16. Ancoragem do cabo no pimentão:</label>
+                <select id="cli-ancoragem-pimentao"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option><option value="N/A (FTTA)">N/A (FTTA)</option></select>
+                <label>17. Foto da ancoragem no pimentão:</label>
+                <input type="file" id="cli-foto-pimentao" class="file-input" accept="image/*">
+
+                <label>18. Acabamento do Drop:</label>
+                <select id="cli-acabamento-drop"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option></select>
+                <label>19. Foto acabamento do Drop:</label>
+                <input type="file" id="cli-foto-acabamento" class="file-input" accept="image/*">
+
+                <label>20. Organização do DG:</label>
+                <select id="cli-org-dg"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option><option value="N/A">N/A</option></select>
+                <label>21. Foto organização do DG:</label>
+                <input type="file" id="cli-foto-dg" class="file-input" accept="image/*">
+
+                <label>22. Situação final:</label>
+                <select id="cli-situacao-final"><option value="APROVADO">APROVADO</option><option value="PENDENCIA-REFAZER">PENDÊNCIA - REFAZER</option></select>
+
+                <label>23. Observações:</label>
+                <textarea id="cli-observacoes" placeholder="Descreva observações..."></textarea>
+
+                <button onclick="salvarVistoria('cliente')" style="background: #2563eb;">Salvar Vistoria Cliente</button>
+            </div>
+
+            <!-- MÓDULO REDE -->
+            <div id="secao-rede" class="card hidden">
+                <h2>Módulo: Fiscalização Rede</h2>
+                <div class="section-info">Avaliação preliminar de risco, infraestrutura de rede e caixas.</div>
+
+                <label>8. APR - Análise Preliminar de Risco:</label>
+                <select id="rede-apr"><option value="Trabalho em altura">Trabalho em altura</option><option value="Não ha atividade de risco">Não há atividade de risco</option></select>
+
+                <label>9. Organização da C.A:</label>
+                <select id="rede-org-ca"><option value="APROVADO">APROVADO</option><option value="REPROVADO">REPROVADO</option></select>
+
+                <label>10. Foto Caixa Externa:</label>
+                <input type="file" id="rede-foto-caixa-ext" class="file-input" accept="image/*">
+
+                <label>11. Foto Caixa Interna:</label>
+                <input type="file" id="rede-foto-caixa-int" class="file-input" accept="image/*">
+
+                <label>22. Situação final:</label>
+                <select id="rede-situacao-final"><option value="APROVADO">APROVADO</option><option value="PENDENCIA-REFAZER">PENDÊNCIA - REFAZER</option></select>
+
+                <label>23. Observações:</label>
+                <textarea id="rede-observacoes" placeholder="Descreva observações..."></textarea>
+
+                <button onclick="salvarVistoria('rede')" style="background: #0d9488;">Salvar Vistoria Rede</button>
+            </div>
+
+            <div class="card">
+                <h3>Minhas Vistorias Realizadas</h3>
+                <div id="minhas-vistorias">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
+            authDomain: "fiscalizar-ef7de.firebaseapp.com",
+            projectId: "fiscalizar-ef7de",
+            storageBucket: "fiscalizar-ef7de.firebasestorage.app",
+            messagingSenderId: "392888202041",
+            appId: "1:392888202041:web:d45e8ceadfed5bf200eee8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Checar se já está logado
+        const tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
+        if (tecnicoLogado) {
+            liberarPainelTecnico(tecnicoLogado);
+        }
+
+        window.alternarAuth = function(tipo) {
+            if (tipo === 'cadastro') {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-cadastro').classList.remove('hidden');
+            } else {
+                document.getElementById('form-cadastro').classList.add('hidden');
+                document.getElementById('form-login').classList.remove('hidden');
+            }
+        }
+
+        window.fazerLoginTecnico = async function() {
+            const email = document.getElementById('log-email').value.trim().toLowerCase();
+            const senha = document.getElementById('log-senha').value.trim();
+            const erroDiv = document.getElementById('erro-login');
+            erroDiv.textContent = "";
+
+            if (!email || !senha) {
+                erroDiv.textContent = "Preencha e-mail e senha!";
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email), where("pass", "==", senha));
+                const snap = await getDocs(q);
+                let user = null;
+                snap.forEach(d => { user = d.data(); });
+
+                if (!user) {
+                    erroDiv.textContent = "E-mail ou senha incorretos!";
+                    return;
+                }
+                if (user.status === "pendente") {
+                    erroDiv.textContent = "Sua conta aguarda aprovação do gestor.";
+                    return;
+                }
+                if (user.status === "rejeitado") {
+                    erroDiv.textContent = "Acesso rejeitado.";
+                    return;
+                }
+
+                localStorage.setItem('tecnicoLogado', JSON.stringify(user));
+                liberarPainelTecnico(user);
+            } catch (e) {
+                console.error(e);
+                erroDiv.textContent = "Erro ao conectar com o banco.";
+            }
+        }
+
+        window.fazerCadastroTecnico = async function() {
+            const nome = document.getElementById('cad-nome').value.trim();
+            const email = document.getElementById('cad-email').value.trim().toLowerCase();
+            const senha = document.getElementById('cad-senha').value.trim();
+            const msgDiv = document.getElementById('msg-cadastro');
+            msgDiv.textContent = "";
+
+            if (!nome || !email || !senha) {
+                msgDiv.textContent = "Preencha todos os campos!";
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email));
+                const snap = await getDocs(q);
+                let existe = false;
+                snap.forEach(() => { existe = true; });
+
+                if (existe) {
+                    msgDiv.textContent = "Este e-mail já está cadastrado!";
+                    return;
+                }
+
+                await addDoc(collection(db, "usuarios_sistema"), {
+                    nome, email, pass: senha, perfil: 'tecnico', status: 'pendente', dataCriacao: new Date().toLocaleDateString()
+                });
+
+                alert("Cadastro realizado! Aguarde a aprovação do gestor para entrar.");
+                alternarAuth('login');
+            } catch (e) {
+                console.error(e);
+                msgDiv.textContent = "Erro ao cadastrar.";
+            }
+        }
+
+        function liberarPainelTecnico(user) {
+            document.getElementById('area-auth').classList.add('hidden');
+            document.getElementById('area-painel').classList.remove('hidden');
+            document.getElementById('saudacao').textContent = `Técnico: ${user.nome}`;
+            document.getElementById('tec-qualidade').value = user.nome;
+            carregarMinhasVistorias(user.email);
+        }
+
+        window.sairTecnico = function() {
+            localStorage.removeItem('tecnicoLogado');
+            location.reload();
+        }
+
+        window.mudarModulo = function(tipo) {
+            if (tipo === 'cliente') {
+                document.getElementById('secao-cliente').classList.remove('hidden');
+                document.getElementById('secao-rede').classList.add('hidden');
+                document.getElementById('btn-mod-cliente').style.background = '#2563eb';
+                document.getElementById('btn-mod-rede').style.background = '#64748b';
+            } else {
+                document.getElementById('secao-rede').classList.remove('hidden');
+                document.getElementById('secao-cliente').classList.add('hidden');
+                document.getElementById('btn-mod-rede').style.background = '#0d9488';
+                document.getElementById('btn-mod-cliente').style.background = '#64748b';
+            }
+        }
+
+        function converterBase64(file) {
+            return new Promise((resolve) => {
+                if (!file) resolve(null);
+                const r = new FileReader();
+                r.readAsDataURL(file);
+                r.onload = () => resolve({ nome: file.name, dados: r.result });
+            });
+        }
+
+        window.salvarVistoria = async function(modulo) {
+            const protocolo = document.getElementById('protocolo').value.trim();
+            const cidade = document.getElementById('cidade').value.trim();
+            if (!protocolo || !cidade) {
+                alert("Preencha ao menos Cidade e Protocolo!");
+                return;
+            }
+
+            let detalhes = {};
+            let situacao = "";
+            let obs = "";
+
+            if (modulo === 'cliente') {
+                situacao = document.getElementById('cli-situacao-final').value;
+                obs = document.getElementById('cli-observacoes').value;
+                detalhes = {
+                    lancamentoDrop: document.getElementById('cli-lancamento-drop').value,
+                    ancoragemRoldana: document.getElementById('cli-ancoragem-roldana').value,
+                    ancoragemPimentao: document.getElementById('cli-ancoragem-pimentao').value,
+                    acabamentoDrop: document.getElementById('cli-acabamento-drop').value,
+                    orgDg: document.getElementById('cli-org-dg').value,
+                    anexos: {
+                        drop: await converterBase64(document.getElementById('cli-foto-drop').files[0]),
+                        roldana: await converterBase64(document.getElementById('cli-foto-roldana').files[0]),
+                        pimentao: await converterBase64(document.getElementById('cli-foto-pimentao').files[0]),
+                        acabamento: await converterBase64(document.getElementById('cli-foto-acabamento').files[0]),
+                        dg: await converterBase64(document.getElementById('cli-foto-dg').files[0])
+                    }
+                };
+            } else {
+                situacao = document.getElementById('rede-situacao-final').value;
+                obs = document.getElementById('rede-observacoes').value;
+                detalhes = {
+                    apr: document.getElementById('rede-apr').value,
+                    orgCa: document.getElementById('rede-org-ca').value,
+                    anexos: {
+                        caixaExt: await converterBase64(document.getElementById('rede-foto-caixa-ext').files[0]),
+                        caixaInt: await converterBase64(document.getElementById('rede-foto-caixa-int').files[0])
+                    }
+                };
+            }
+
+            const registro = {
+                usuarioId: tecnicoLogado.email,
+                nomeUsuarioLogado: tecnicoLogado.nome,
+                tecQualidade: tecnicoLogado.nome,
+                estado: document.getElementById('estado').value,
+                cidade, protocolo,
+                empresa: document.getElementById('empresa').value,
+                tecExecutou: document.getElementById('tec-executou').value,
+                tipoVistoria: document.getElementById('tipo-vistoria').value,
+                modulo: modulo.toUpperCase(),
+                situacaoFinal: situacao,
+                observacoes: obs,
+                detalhesModulo: detalhes,
+                timestamp: Date.now(),
+                dataEnvio: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
+            };
+
+            await addDoc(collection(db, "fiscalizacoes_modulos"), registro);
+            alert("Vistoria enviada com sucesso!");
+            document.getElementById('protocolo').value = '';
+            carregarMinhasVistorias(tecnicoLogado.email);
+        }
+
+        async function carregarMinhasVistorias(email) {
+            const container = document.getElementById('minhas-vistorias');
+            container.innerHTML = "Carregando...";
+            const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
+            let lista = [];
+            snap.forEach(d => lista.push(d.data()));
+            lista.sort((a,b) => b.timestamp - a.timestamp);
+            let minhas = lista.filter(i => i.usuarioId === email);
+
+            container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
+            minhas.forEach(i => {
+                let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
+                container.innerHTML += `
+                    <div class="lista-vistorias">
+                        <b>Módulo:</b> ${i.modulo} | <b>Protocolo:</b> ${i.protocolo} (${i.cidade}/${i.estado})<br>
+                        <b>Situação:</b> <span class="${cor}">${i.situacaoFinal}</span> | <small>${i.dataEnvio}</small>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
