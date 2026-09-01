@@ -3,100 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Gestor - Vistorias e Usuários</title>
+    <title>Painel do Gestor - Vistorias</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
-        header { background: #1e293b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .container { padding: 15px; max-width: 950px; margin: auto; }
-        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
+        header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; color: #1e293b; }
-        button { background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        button:hover { background: #1d4ed8; }
-        .btn-aprovar { background: #16a34a; }
-        .btn-aprovar:hover { background: #15803d; }
-        .btn-rejeitar { background: #dc2626; }
-        .btn-rejeitar:hover { background: #b91c1c; }
-        .btn-pdf { background: #0ea5e9; }
-        .btn-pdf:hover { background: #0284c7; }
-        .btn-individual { background: #8b5cf6; }
-        .btn-individual:hover { background: #7c3aed; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-aprovado { background: #dcfce7; color: #16a34a; }
-        .badge-reprovado, .badge-pendente { background: #fee2e2; color: #dc2626; }
-        .filtros-container { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
-        .filtros-container select { padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 14px; }
-        .lista-vistorias { background: #f8fafc; border-left: 4px solid #2563eb; padding: 15px; margin-top: 12px; border-radius: 4px; font-size: 13px; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+        th { background: #f8fafc; }
+        button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-aprovar { background: #16a34a; color: white; }
+        .btn-rejeitar { background: #dc2626; color: white; }
+        .btn-voltar { background: #64748b; color: white; padding: 8px 15px; }
+        .hidden { display: none; }
+        .status-pendente { color: #d97706; font-weight: bold; }
         .status-aprovado { color: #16a34a; font-weight: bold; }
-        .status-reprovado { color: #dc2626; font-weight: bold; }
-        .foto-mini { max-width: 80px; max-height: 80px; border-radius: 4px; margin: 4px; border: 1px solid #cbd5e1; cursor: pointer; object-fit: cover; }
-        .fotos-container { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-
-        /* Estilo otimizado para impressão / PDF (Geral ou Individual) */
-        @media print {
-            header, .card:first-child, .btn-aprovar, .btn-rejeitar, .btn-pdf, .btn-individual, .filtros-container, .nao-imprimir { display: none !important; }
-            body { background: white; color: black; }
-            .card { box-shadow: none; border: none; padding: 0; }
-            .lista-vistorias { background: #fff; border-left: 2px solid #000; break-inside: avoid; margin-bottom: 20px; border: 1px solid #ddd; }
-            .modo-impressao-individual .lista-vistorias:not(.destacado) { display: none !important; }
-        }
+        .status-rejeitado { color: #dc2626; font-weight: bold; }
+        .vistoria-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
+        .fotos-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .foto-item { background: #fff; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
+        .foto-item img { max-width: 120px; max-height: 120px; border-radius: 4px; display: block; cursor: pointer; }
+        .erro { color: #dc2626; text-align: center; margin-bottom: 10px; }
     </style>
 </head>
-<body id="corpo-pagina">
+<body>
 
-    <header>
-        <div>
-            <span style="font-weight: bold; font-size: 16px;">Painel do Gestor - Unifique</span>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-pdf" onclick="imprimirRelatorioGeral()">📄 Salvar Relatório Geral em PDF</button>
-            <button onclick="window.location.href='index.html'" style="background: #64748b;">Ir para Painel do Técnico</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <!-- GESTÃO DE USUÁRIOS -->
+    <!-- TELA DE LOGIN DO GESTOR -->
+    <div id="login-gestor-container" class="container" style="max-width: 400px; margin-top: 80px;">
         <div class="card">
-            <h2>Gerenciamento de Técnicos / Usuários</h2>
-            <p style="font-size: 13px; color: #64748b;">Aprove o cadastro de novos técnicos para liberar o acesso ao painel de vistorias.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuário</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-usuarios">
-                    <tr><td colspan="3">Carregando usuários...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- HISTÓRICO DE VISTORIAS DOS TÉCNICOS -->
-        <div class="card">
-            <h2>Vistorias Realizadas em Campo</h2>
-            
-            <!-- Filtros por Categoria -->
-            <div class="filtros-container">
-                <label for="filtro-categoria" style="font-weight: bold; font-size: 13px;">Filtrar por Categoria:</label>
-                <select id="filtro-categoria" onchange="filtrarVistorias()">
-                    <option value="TODOS">Todas as Categorias</option>
-                    <option value="CLIENTE">Fiscalização Cliente</option>
-                    <option value="REDE">Fiscalização Rede</option>
-                </select>
-            </div>
-
-            <div id="lista-todas-vistorias">Carregando vistorias...</div>
+            <button class="btn-voltar" style="margin-bottom: 15px;" onclick="window.location.href='index.html'">← Voltar</button>
+            <h2>Acesso do Gestor</h2>
+            <div id="erro-gestor" class="erro"></div>
+            <label>E-mail:</label>
+            <input type="email" id="gestor-email" placeholder="email@dominio.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <label>Senha:</label>
+            <input type="password" id="gestor-senha" placeholder="Senha" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <button onclick="fazerLoginGestor()" style="background: #2563eb; color: white; width: 100%; padding: 12px;">Entrar no Painel</button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- PAINEL PRINCIPAL DO GESTOR -->
+    <div id="painel-gestor-container" class="hidden">
+        <header>
+            <div><h2>Painel de Gestão e Vistorias</h2></div>
+            <button class="btn-voltar" onclick="sairGestor()">Sair</button>
+        </header>
 
+        <div class="container">
+            <!-- SEÇÃO DE GERENCIAMENTO DE TÉCNICOS -->
+            <div class="card">
+                <h3>Cadastros de Técnicos Pendentes / Aprovados</h3>
+                <div id="lista-usuarios">Carregando usuários...</div>
+            </div>
+
+            <!-- SEÇÃO DE VISTORIAS ENVIADAS COM FOTOS -->
+            <div class="card">
+                <h3>Vistorias e Fiscalizações Recebidas</h3>
+                <div style="margin-bottom: 15px;">
+                    <label>Filtrar por Protocolo ou Cidade:</label>
+                    <input type="text" id="filtro-busca" placeholder="Digite para filtrar..." onkeyup="filtrarVistorias()" style="padding: 8px; width: 300px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                </div>
+                <div id="lista-vistorias-gestor">Carregando vistorias...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SDKs do Firebase (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
             authDomain: "fiscalizar-ef7de.firebaseapp.com",
@@ -106,183 +84,172 @@
             appId: "1:392888202041:web:d45e8ceadfed5bf200eee8"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        let dadosUsuarios = [];
-        let listaVistoriasGlobal = [];
+        let todasVistoriasGlobal = [];
 
+        // Verifica se já estava logado
+        if (localStorage.getItem('gestorLogado') === 'true') {
+            liberarPainelGestor();
+        }
+
+        window.fazerLoginGestor = function() {
+            const email = document.getElementById('gestor-email').value.trim();
+            const senha = document.getElementById('gestor-senha').value.trim();
+            const erroDiv = document.getElementById('erro-gestor');
+
+            // Senha padrão do gestor ou ajuste conforme sua regra
+            if (email === "gestor@admin.com" && senha === "admin123") {
+                localStorage.setItem('gestorLogado', 'true');
+                liberarPainelGestor();
+            } else {
+                erroDiv.textContent = "Credenciais de gestor inválidas!";
+            }
+        }
+
+        function liberarPainelGestor() {
+            document.getElementById('login-gestor-container').classList.add('hidden');
+            document.getElementById('painel-gestor-container').classList.remove('hidden');
+            carregarUsuarios();
+            carregarVistoriasGestor();
+        }
+
+        window.sairGestor = function() {
+            localStorage.removeItem('gestorLogado');
+            location.reload();
+        }
+
+        // Carrega usuários cadastrados para aprovação
         async function carregarUsuarios() {
-            const tbody = document.getElementById('tabela-usuarios');
-            tbody.innerHTML = '<tr><td colspan="3">Carregando usuários...</td></tr>';
-
+            const container = document.getElementById('lista-usuarios');
             try {
-                dadosUsuarios = [];
-                try {
-                    const snap1 = await getDocs(collection(db, "usuarios_sistema"));
-                    snap1.forEach(docSnap => {
-                        dadosUsuarios.push({ id: docSnap.id, origem: "usuarios_sistema", ...docSnap.data() });
-                    });
-                } catch (e) {}
-
-                try {
-                    const snap2 = await getDocs(collection(db, "usuarios"));
-                    snap2.forEach(docSnap => {
-                        if (!dadosUsuarios.some(u => u.id === docSnap.id)) {
-                            dadosUsuarios.push({ id: docSnap.id, origem: "usuarios", ...docSnap.data() });
-                        }
-                    });
-                } catch (e) {}
-
-                renderizarTabelaUsuarios();
-            } catch (e) {
-                console.error("Erro ao buscar usuários:", e);
-                tbody.innerHTML = '<tr><td colspan="3" style="color:red;">Erro ao carregar usuários.</td></tr>';
-            }
-        }
-
-        function renderizarTabelaUsuarios() {
-            const tbody = document.getElementById('tabela-usuarios');
-            tbody.innerHTML = '';
-
-            if (dadosUsuarios.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3">Nenhum usuário cadastrado encontrado.</td></tr>';
-                return;
-            }
-
-            dadosUsuarios.forEach(user => {
-                const tr = document.createElement('tr');
-                const isAprovado = user.status === 'aprovado';
-                tr.innerHTML = `
-                    <td><b>${user.nome || 'Sem Nome'}</b><br><small style="color:#64748b">${user.email}</small></td>
-                    <td><span class="badge ${isAprovado ? 'badge-aprovado' : 'badge-pendente'}">${user.status || 'pendente'}</span></td>
-                    <td>
-                        ${!isAprovado ? `<button class="btn-aprovar" onclick="aprovarUsuario('${user.id}')">Aprovar</button>` : ''}
-                        <button class="btn-rejeitar" onclick="excluirUsuario('${user.id}')">Excluir</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.aprovarUsuario = async function(id) {
-            try {
-                const usuarioEncontrado = dadosUsuarios.find(u => u.id === id);
-                const colecaoAlvo = usuarioEncontrado && usuarioEncontrado.origem ? usuarioEncontrado.origem : "usuarios_sistema";
-                await updateDoc(doc(db, colecaoAlvo, id), { status: 'aprovado' });
-                alert("Usuário aprovado com sucesso!");
-                carregarUsuarios();
-            } catch (e) {
-                alert("Erro ao aprovar usuário: " + e.message);
-            }
-        };
-
-        window.excluirUsuario = async function(id) {
-            if (confirm("Tem certeza que deseja excluir este usuário?")) {
-                try {
-                    const usuarioEncontrado = dadosUsuarios.find(u => u.id === id);
-                    const colecaoAlvo = usuarioEncontrado && usuarioEncontrado.origem ? usuarioEncontrado.origem : "usuarios_sistema";
-                    await deleteDoc(doc(db, colecaoAlvo, id));
-                    alert("Usuário removido com sucesso!");
-                    carregarUsuarios();
-                } catch (e) {
-                    alert("Erro ao excluir usuário: " + e.message);
+                const snap = await db.collection("usuarios_sistema").get();
+                if (snap.empty) {
+                    container.innerHTML = "<p>Nenhum usuário cadastrado.</p>";
+                    return;
                 }
-            }
-        };
 
-        async function carregarVistoriasGestor() {
-            const container = document.getElementById('lista-todas-vistorias');
-            container.innerHTML = "Carregando vistorias...";
-            try {
-                const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
-                listaVistoriasGlobal = [];
-                snap.forEach(d => listaVistoriasGlobal.push({ idDoc: d.id, ...d.data() }));
-                listaVistoriasGlobal.sort((a,b) => b.timestamp - a.timestamp);
-
-                renderizarListaVistorias(listaVistoriasGlobal);
+                let html = `<table><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></tr>`;
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    const id = doc.id;
+                    let statusClass = u.status === 'aprovado' ? 'status-aprovado' : (u.status === 'rejeitado' ? 'status-rejeitado' : 'status-pendente');
+                    
+                    html += `<tr>
+                        <td>${u.nome || 'N/A'}</td>
+                        <td>${u.email || 'N/A'}</td>
+                        <td><span class="${statusClass}">${u.status || 'pendente'}</span></td>
+                        <td>
+                            <button class="btn-aprovar" onclick="atualizarStatusUsuario('${id}', 'aprovado')">Aprovar</button>
+                            <button class="btn-rejeitar" onclick="atualizarStatusUsuario('${id}', 'rejeitado')">Rejeitar</button>
+                        </td>
+                    </tr>`;
+                });
+                html += `</table>`;
+                container.innerHTML = html;
             } catch (e) {
                 console.error(e);
-                container.innerHTML = "<p style='color:red;'>Erro ao carregar histórico de vistorias.</p>";
+                container.innerHTML = "<p>Erro ao carregar usuários.</p>";
+            }
+        }
+
+        window.atualizarStatusUsuario = async function(id, novoStatus) {
+            try {
+                await db.collection("usuarios_sistema").doc(id).update({ status: novoStatus });
+                alert(`Status alterado para: ${novoStatus}`);
+                carregarUsuarios();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao atualizar status.");
+            }
+        }
+
+        // Carrega todas as vistorias e converte o objeto de fotos em imagens visíveis
+        async function carregarVistoriasGestor() {
+            const container = document.getElementById('lista-vistorias-gestor');
+            container.innerHTML = "Carregando vistorias...";
+            try {
+                const snap = await db.collection("fiscalizacoes_modulos").get();
+                todasVistoriasGlobal = [];
+                snap.forEach(doc => {
+                    todasVistoriasGlobal.push({ id: doc.id, ...doc.data() });
+                });
+
+                todasVistoriasGlobal.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                renderizarListaVistorias(todasVistoriasGlobal);
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = "<p>Erro ao carregar vistorias do banco.</p>";
             }
         }
 
         function renderizarListaVistorias(lista) {
-            const container = document.getElementById('lista-todas-vistorias');
-            container.innerHTML = lista.length === 0 ? '<p>Nenhuma vistoria encontrada para esta categoria.</p>' : '';
-            
-            lista.forEach((i, index) => {
-                let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
+            const container = document.getElementById('lista-vistorias-gestor');
+            if (lista.length === 0) {
+                container.innerHTML = "<p>Nenhuma vistoria encontrada.</p>";
+                return;
+            }
+
+            let html = "";
+            lista.forEach(i => {
+                let corSituacao = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-rejeitado';
                 
-                let fotosHtml = '';
-                if (i.fotos && i.fotos.length > 0) {
-                    fotosHtml = '<div class="fotos-container"><b>Registros Fotográficos:</b><br>';
-                    i.fotos.forEach(foto => {
-                        if (foto) {
-                            fotosHtml += `<img src="${foto}" class="foto-mini" onclick="window.open('${foto}')" title="Clique para ampliar">`;
+                // Varre o objeto de fotos em Base64 gravado no Firestore
+                let fotosHtml = "";
+                if (i.detalhesModulo && i.detalhesModulo.fotos) {
+                    const fotosObj = i.detalhesModulo.fotos;
+                    let temFotoValida = false;
+
+                    for (let chave in fotosObj) {
+                        if (fotosObj[chave]) {
+                            temFotoValida = true;
+                            fotosHtml += `
+                                <div class="foto-item">
+                                    <small><b>${chave}</b></small><br>
+                                    <img src="${fotosObj[chave]}" alt="${chave}" onclick="window.open(this.src)">
+                                </div>
+                            `;
                         }
-                    });
-                    fotosHtml += '</div>';
-                }
-
-                // Detalhes específicos salvos no módulo
-                let detalhesHtml = '';
-                if (i.detalhesModulo) {
-                    detalhesHtml = '<div style="margin-top: 6px; font-size: 12px; color: #475569; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0;"><b>Itens Avaliados:</b> ';
-                    for (let [chave, valor] of Object.entries(i.detalhesModulo)) {
-                        detalhesHtml += `<br>• <b>${chave}:</b> ${valor}`;
                     }
-                    detalhesHtml += '</div>';
+                    if (temFotoValida) {
+                        fotosHtml = `<div style="margin-top: 10px;"><b>Registros Fotográficos:</b><div class="fotos-grid">${fotosHtml}</div></div>`;
+                    }
                 }
 
-                container.innerHTML += `
-                    <div class="lista-vistorias" id="vistoria-${i.idDoc || index}">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 5px;">
-                            <div>
-                                <b>Técnico Responsável:</b> ${i.nomeUsuarioLogado || i.tecQualidade} | <b>Módulo:</b> ${i.modulo} | <b>Protocolo/OS:</b> ${i.protocolo} (${i.cidade}/${i.estado})<br>
-                                <b>Executor:</b> ${i.tecExecutou || 'Não informado'} | <b>Empresa:</b> ${i.empresa || 'Não informada'}<br>
-                                <b>Situação:</b> <span class="${cor}">${i.situacaoFinal}</span> | <small>${i.dataEnvio}</small>
-                            </div>
-                            <button class="btn-individual" onclick="imprimirVistoriaIndividual('${i.idDoc || index}')">📄 PDF desta Vistoria</button>
-                        </div>
-                        ${i.observacoes ? `<br><b>Observações:</b> ${i.observacoes}` : ''}
-                        ${detalhesHtml}
+                // Detalhes extras do formulário
+                let detalhesTexto = "";
+                if (i.detalhesModulo) {
+                    for (let key in i.detalhesModulo) {
+                        if (key !== 'fotos') {
+                            detalhesTexto += `<b>${key}:</b> ${i.detalhesModulo[key]} | `;
+                        }
+                    }
+                }
+
+                html += `
+                    <div class="vistoria-box">
+                        <b>Módulo:</b> ${i.modulo} | <b>Protocolo:</b> ${i.protocolo} | <b>Cidade:</b> ${i.cidade}/${i.estado}<br>
+                        <b>Técnico Qualidade:</b> ${i.tecQualidade || i.nomeUsuarioLogado} | <b>Empresa:</b> ${i.empresa || 'N/A'}<br>
+                        <b>Situação Final:</b> <span class="${corSituacao}">${i.situacaoFinal}</span> | <b>Data:</b> ${i.dataEnvio || 'N/A'}<br>
+                        <div style="font-size: 12px; color: #475569; margin-top: 5px;">${detalhesTexto}</div>
+                        ${i.observacoes ? `<div style="margin-top: 5px;"><b>Obs:</b> ${i.observacoes}</div>` : ''}
                         ${fotosHtml}
                     </div>
                 `;
             });
+            container.innerHTML = html;
         }
 
         window.filtrarVistorias = function() {
-            const categoria = document.getElementById('filtro-categoria').value;
-            if (categoria === 'TODOS') {
-                renderizarListaVistorias(listaVistoriasGlobal);
-            } else {
-                const filtradas = listaVistoriasGlobal.filter(item => item.modulo === categoria);
-                renderizarListaVistorias(filtradas);
-            }
-        };
-
-        window.imprimirRelatorioGeral = function() {
-            document.body.classList.remove('modo-impressao-individual');
-            window.print();
-        };
-
-        window.imprimirVistoriaIndividual = function(idDoc) {
-            // Remove destaque anterior se houver
-            document.querySelectorAll('.lista-vistorias').forEach(el => el.classList.remove('destacado'));
-            
-            // Adiciona classe de destaque na vistoria escolhida
-            const elemento = document.getElementById(`vistoria-${idDoc}`);
-            if (elemento) {
-                elemento.classList.add('destacado');
-                document.body.classList.add('modo-impressao-individual');
-                window.print();
-            }
-        };
-
-        carregarUsuarios();
-        carregarVistoriasGestor();
+            const termo = document.getElementById('filtro-busca').value.toLowerCase();
+            const filtradas = todasVistoriasGlobal.filter(i => 
+                (i.protocolo && i.protocolo.toLowerCase().includes(termo)) || 
+                (i.cidade && i.cidade.toLowerCase().includes(termo)) ||
+                (i.empresa && i.empresa.toLowerCase().includes(termo))
+            );
+            renderizarListaVistorias(filtradas);
+        }
     </script>
 </body>
 </html>
