@@ -27,6 +27,7 @@
         .erro { color: #dc2626; font-size: 13px; text-align: center; margin-bottom: 10px; }
         .toggle-link { text-align: center; margin-top: 15px; font-size: 13px; color: #2563eb; cursor: pointer; }
         .toggle-link:hover { text-decoration: underline; }
+        .loading-overlay { display: none; font-weight: bold; color: #2563eb; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -153,6 +154,7 @@
                 <label>23. Observações:</label>
                 <textarea id="cli-observacoes" placeholder="Descreva observações..."></textarea>
 
+                <div id="loading-cliente" class="loading-overlay">Enviando fotos e salvando vistoria, aguarde...</div>
                 <button onclick="salvarVistoria('cliente')" style="background: #2563eb;">Salvar Vistoria Cliente</button>
             </div>
 
@@ -179,6 +181,7 @@
                 <label>23. Observações:</label>
                 <textarea id="rede-observacoes" placeholder="Descreva observações..."></textarea>
 
+                <div id="loading-rede" class="loading-overlay">Enviando fotos e salvando vistoria, aguarde...</div>
                 <button onclick="salvarVistoria('rede')" style="background: #0d9488;">Salvar Vistoria Rede</button>
             </div>
 
@@ -189,9 +192,11 @@
         </div>
     </div>
 
+    <!-- Importando o Firebase (App, Firestore e Storage) via Modular SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
@@ -204,6 +209,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         let tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
         if (tecnicoLogado) {
@@ -321,6 +327,20 @@
             }
         }
 
+        // Função auxiliar para fazer upload de imagem para o Storage do Firebase
+        async function enviarFotoStorage(fileInputId, protocolo) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput || fileInput.files.length === 0) return "";
+
+            const file = fileInput.files[0];
+            const timestamp = Date.now();
+            const storageRef = ref(storage, `vistorias/${protocolo}_${timestamp}_${file.name}`);
+            
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+            return downloadUrl;
+        }
+
         window.salvarVistoria = async function(modulo) {
             if (!tecnicoLogado) {
                 tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
@@ -339,56 +359,78 @@
                 return;
             }
 
-            let detalhes = {};
-            let situacao = "";
-            let obs = "";
-
-            if (modulo === 'cliente') {
-                situacao = document.getElementById('cli-situacao-final').value;
-                obs = document.getElementById('cli-observacoes').value;
-                detalhes = {
-                    lancamentoDrop: document.getElementById('cli-lancamento-drop').value,
-                    ancoragemRoldana: document.getElementById('cli-ancoragem-roldana').value,
-                    ancoragemPimentao: document.getElementById('cli-ancoragem-pimentao').value,
-                    acabamentoDrop: document.getElementById('cli-acabamento-drop').value,
-                    orgDg: document.getElementById('cli-org-dg').value,
-                    possuiFotos: "Sim"
-                };
-            } else {
-                situacao = document.getElementById('rede-situacao-final').value;
-                obs = document.getElementById('rede-observacoes').value;
-                detalhes = {
-                    apr: document.getElementById('rede-apr').value,
-                    orgCa: document.getElementById('rede-org-ca').value,
-                    possuiFotos: "Sim"
-                };
-            }
-
-            const registro = {
-                usuarioId: tecnicoLogado.email,
-                nomeUsuarioLogado: tecnicoLogado.nome,
-                tecQualidade: tecnicoLogado.nome,
-                estado: document.getElementById('estado').value,
-                cidade, protocolo,
-                empresa: document.getElementById('empresa').value,
-                tecExecutou: document.getElementById('tec-executou').value,
-                tipoVistoria: document.getElementById('tipo-vistoria').value,
-                modulo: modulo.toUpperCase(),
-                situacaoFinal: situacao,
-                observacoes: obs,
-                detalhesModulo: detalhes,
-                timestamp: Date.now(),
-                dataEnvio: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
-            };
+            const loadingDiv = document.getElementById(modulo === 'cliente' ? 'loading-cliente' : 'loading-rede');
+            loadingDiv.style.display = 'block';
 
             try {
+                let detalhes = {};
+                let situacao = "";
+                let obs = "";
+                let fotosUrls = {};
+
+                if (modulo === 'cliente') {
+                    situacao = document.getElementById('cli-situacao-final').value;
+                    obs = document.getElementById('cli-observacoes').value;
+
+                    // Upload de cada foto do módulo cliente
+                    fotosUrls.fotoDrop = await enviarFotoStorage('cli-foto-drop', protocolo);
+                    fotosUrls.fotoRoldana = await enviarFotoStorage('cli-foto-roldana', protocolo);
+                    fotosUrls.fotoPimentao = await enviarFotoStorage('cli-foto-pimentao', protocolo);
+                    fotosUrls.fotoAcabamento = await enviarFotoStorage('cli-foto-acabamento', protocolo);
+                    fotosUrls.fotoDg = await enviarFotoStorage('cli-foto-dg', protocolo);
+
+                    detalhes = {
+                        lancamentoDrop: document.getElementById('cli-lancamento-drop').value,
+                        ancoragemRoldana: document.getElementById('cli-ancoragem-roldana').value,
+                        ancoragemPimentao: document.getElementById('cli-ancoragem-pimentao').value,
+                        acabamentoDrop: document.getElementById('cli-acabamento-drop').value,
+                        orgDg: document.getElementById('cli-org-dg').value,
+                        fotos: fotosUrls,
+                        possuiFotos: "Sim"
+                    };
+                } else {
+                    situacao = document.getElementById('rede-situacao-final').value;
+                    obs = document.getElementById('rede-observacoes').value;
+
+                    // Upload de cada foto do módulo rede
+                    fotosUrls.fotoCaixaExt = await enviarFotoStorage('rede-foto-caixa-ext', protocolo);
+                    fotosUrls.fotoCaixaInt = await enviarFotoStorage('rede-foto-caixa-int', protocolo);
+
+                    detalhes = {
+                        apr: document.getElementById('rede-apr').value,
+                        orgCa: document.getElementById('rede-org-ca').value,
+                        fotos: fotosUrls,
+                        possuiFotos: "Sim"
+                    };
+                }
+
+                const registro = {
+                    usuarioId: tecnicoLogado.email,
+                    nomeUsuarioLogado: tecnicoLogado.nome,
+                    tecQualidade: tecnicoLogado.nome,
+                    estado: document.getElementById('estado').value,
+                    cidade, 
+                    protocolo,
+                    empresa: document.getElementById('empresa').value,
+                    tecExecutou: document.getElementById('tec-executou').value,
+                    tipoVistoria: document.getElementById('tipo-vistoria').value,
+                    modulo: modulo.toUpperCase(),
+                    situacaoFinal: situacao,
+                    observacoes: obs,
+                    detalhesModulo: detalhes,
+                    timestamp: Date.now(),
+                    dataEnvio: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
+                };
+
                 await addDoc(collection(db, "fiscalizacoes_modulos"), registro);
-                alert("Vistoria enviada e salva com sucesso!");
+                alert("Vistoria e fotos enviadas com sucesso!");
                 document.getElementById('protocolo').value = '';
                 carregarMinhasVistorias(tecnicoLogado.email);
             } catch (e) {
                 console.error("Erro ao salvar:", e);
-                alert("Erro ao salvar vistoria no banco. Verifique o console.");
+                alert("Erro ao salvar vistoria e fotos no banco. Verifique o console.");
+            } finally {
+                loadingDiv.style.display = 'none';
             }
         }
 
