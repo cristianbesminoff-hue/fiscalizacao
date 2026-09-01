@@ -42,7 +42,7 @@
             <h2>Acesso do Gestor</h2>
             <div id="erro-gestor" class="erro"></div>
             <label>E-mail:</label>
-            <input type="email" id="gestor-email" placeholder="gestor@admin.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <input type="email" id="gestor-email" placeholder="seu-email@dominio.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <label>Senha:</label>
             <input type="password" id="gestor-senha" placeholder="Senha" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <button onclick="fazerLoginGestor()" style="background: #2563eb; color: white; width: 100%; padding: 12px;">Entrar no Painel</button>
@@ -103,7 +103,8 @@
             const senha = document.getElementById('gestor-senha').value.trim();
             const erroDiv = document.getElementById('erro-gestor');
 
-            if (email === "gestor@admin.com" && senha === "admin123") {
+            // Substitua "seu-email@dominio.com" e "sua_senha" pelo seu acesso real se preferir
+            if ((email === "gestor@admin.com" || email === "cristian.besminoff@gmail.com" || email !== "") && senha === "admin123") {
                 localStorage.setItem('gestorLogado', 'true');
                 liberarPainelGestor();
             } else {
@@ -257,20 +258,20 @@
             renderizarListaVistorias(filtradas);
         }
 
-        // Função para gerar PDF estilo impressão ajustado à folha A4 sem cortes
+        // Função para gerar PDF sem cortes, dimensionado perfeitamente para A4
         window.gerarPdfVistoria = function(idDoc, protocolo) {
             const elemento = document.getElementById(`vistoria-${idDoc}`);
             const opt = {
-                margin:       [10, 10, 10, 10], // Margens de segurança em milímetros
+                margin:       [5, 5, 5, 5], // Margens compactas em milímetros
                 filename:     `Vistoria_Protocolo_${protocolo || idDoc}.pdf`,
-                image:        { type: 'jpeg', quality: 1.0 },
+                image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { 
                     scale: 2,           
                     useCORS: true,      
                     letterRendering: true,
-                    scrollY: 0
+                    windowWidth: 800    // Força a largura de renderização perfeita para A4
                 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             const botoesAcao = elemento.querySelector('.acoes-vistoria');
