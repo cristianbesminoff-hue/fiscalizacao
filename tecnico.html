@@ -238,10 +238,16 @@
             }
 
             try {
-                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email), where("pass", "==", senha));
+                const q = query(collection(db, "usuarios_sistema"), where("email", "==", email));
                 const snap = await getDocs(q);
                 let user = null;
-                snap.forEach(d => { user = d.data(); });
+                
+                snap.forEach(d => { 
+                    const dados = d.data();
+                    if (dados.pass === senha) {
+                        user = dados;
+                    }
+                });
 
                 if (!user) {
                     erroDiv.textContent = "E-mail ou senha incorretos!";
@@ -260,8 +266,8 @@
                 tecnicoLogado = user;
                 liberarPainelTecnico(user);
             } catch (e) {
-                console.error(e);
-                erroDiv.textContent = "Erro ao conectar com o banco.";
+                console.error("Erro detalhado no login:", e);
+                erroDiv.textContent = "Erro ao conectar com o banco: " + e.message;
             }
         }
 
@@ -329,7 +335,9 @@
 
         async function enviarFotoStorage(fileInputId, protocolo) {
             const fileInput = document.getElementById(fileInputId);
-            if (!fileInput || fileInput.files.length === 0) return "";
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                return ""; // Retorna vazio se nenhuma foto foi anexada neste campo específico
+            }
 
             const file = fileInput.files[0];
             const timestamp = Date.now();
@@ -340,9 +348,8 @@
                 const downloadUrl = await getDownloadURL(snapshot.ref);
                 return downloadUrl;
             } catch (error) {
-                console.error("Erro detalhado no upload do Storage:", error);
-                alert(`Erro ao enviar a foto ${file.name}: ${error.message}`);
-                throw error;
+                console.error("Erro no upload da foto:", error);
+                throw new Error(`Falha ao enviar a foto ${file.name}: ${error.message}`);
             }
         }
 
@@ -447,7 +454,7 @@
                 lista.sort((a,b) => b.timestamp - a.timestamp);
                 let minhas = lista.filter(i => i.usuarioId === email);
 
-                    container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
+                container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
                 minhas.forEach(i => {
                     let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
                     container.innerHTML += `
