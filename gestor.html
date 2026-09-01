@@ -19,7 +19,7 @@
         .status-aprovado { color: #16a34a; font-weight: bold; }
         .status-reprovado { color: #dc2626; font-weight: bold; }
         .btn-aprovar { background: #16a34a; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; }
-        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; width: auto; }
+        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; }
         .erro { color: #dc2626; font-size: 13px; text-align: center; }
     </style>
 </head>
@@ -48,8 +48,8 @@
 
         <div class="container">
             <div class="card">
-                <h3>Aprovação de Contas de Técnicos</h3>
-                <div id="lista-usuarios-pendentes">Carregando solicitações...</div>
+                <h3>Gerenciamento de Técnicos</h3>
+                <div id="lista-usuarios-pendentes">Carregando usuários...</div>
             </div>
 
             <div class="card">
@@ -62,7 +62,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
@@ -98,7 +98,6 @@
                 return;
             }
 
-            // Liberação direta para o gestor mestre
             localStorage.setItem('gestorLogado', 'true');
             liberarGestor();
         }
@@ -121,19 +120,22 @@
             try {
                 // Usuários
                 const snapUser = await getDocs(collection(db, "usuarios_sistema"));
-                let pendentes = [];
+                let usuarios = [];
                 snapUser.forEach(d => {
                     let u = { id: d.id, ...d.data() };
-                    if (u.status === "pendente") pendentes.push(u);
+                    if (u.perfil !== 'gestor') usuarios.push(u);
                 });
 
-                cUsuarios.innerHTML = pendentes.length === 0 ? '<p>Nenhuma conta pendente de aprovação.</p>' : '';
-                pendentes.forEach(u => {
+                cUsuarios.innerHTML = usuarios.length === 0 ? '<p>Nenhum técnico cadastrado.</p>' : '';
+                usuarios.forEach(u => {
+                    let corStatus = u.status === 'ativo' ? 'status-aprovado' : (u.status === 'rejeitado' ? 'status-reprovado' : '');
                     cUsuarios.innerHTML += `
                         <div class="lista-usuarios">
                             <b>Nome:</b> ${u.nome} | <b>E-mail:</b> ${u.email}<br>
+                            <b>Status atual:</b> <span class="${corStatus}">${u.status.toUpperCase()}</span><br><br>
                             <button class="btn-aprovar" onclick="mudarStatus('${u.id}', 'ativo')">Aprovar</button>
                             <button class="btn-rejeitar" onclick="mudarStatus('${u.id}', 'rejeitado')">Rejeitar</button>
+                            <button style="background: #475569; padding: 6px 12px; font-size: 12px; width: auto;" onclick="excluirTecnico('${u.id}', '${u.nome}')">Excluir da Base</button>
                         </div>
                     `;
                 });
@@ -165,6 +167,14 @@
             await updateDoc(doc(db, "usuarios_sistema", id), { status: novoStatus });
             alert(`Conta ${novoStatus === 'ativo' ? 'aprovada' : 'rejeitada'} com sucesso!`);
             carregarDadosGestor();
+        }
+
+        window.excluirTecnico = async function(id, nome) {
+            if (confirm(`Deseja realmente excluir o técnico ${nome} da base de dados? Ele perderá o acesso ao sistema.`)) {
+                await deleteDoc(doc(db, "usuarios_sistema", id));
+                alert("Técnico excluído com sucesso!");
+                carregarDadosGestor();
+            }
         }
     </script>
 </body>
