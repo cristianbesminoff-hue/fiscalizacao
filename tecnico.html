@@ -205,7 +205,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
+        let tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
         if (tecnicoLogado) {
             liberarPainelTecnico(tecnicoLogado);
         }
@@ -251,6 +251,7 @@
                 }
 
                 localStorage.setItem('tecnicoLogado', JSON.stringify(user));
+                tecnicoLogado = user;
                 liberarPainelTecnico(user);
             } catch (e) {
                 console.error(e);
@@ -321,6 +322,16 @@
         }
 
         window.salvarVistoria = async function(modulo) {
+            if (!tecnicoLogado) {
+                tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
+            }
+
+            if (!tecnicoLogado) {
+                alert("Sessão expirada. Faça login novamente.");
+                location.reload();
+                return;
+            }
+
             const protocolo = document.getElementById('protocolo').value.trim();
             const cidade = document.getElementById('cidade').value.trim();
             if (!protocolo || !cidade) {
