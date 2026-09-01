@@ -82,38 +82,25 @@
             liberarGestor();
         }
 
-        window.fazerLoginGestor = async function() {
+        window.fazerLoginGestor = function() {
             const email = document.getElementById('gestor-email').value.trim().toLowerCase();
             const senha = document.getElementById('gestor-senha').value.trim();
             const erroDiv = document.getElementById('erro-gestor');
             erroDiv.textContent = "";
 
             if (email !== GESTOR_MESTRE) {
-                erroDiv.textContent = "Acesso restrito apenas ao gestor autorizado!";
+                erroDiv.textContent = "Acesso restrito apenas ao e-mail do gestor!";
                 return;
             }
 
-            try {
-                const snap = await getDocs(collection(db, "usuarios_sistema"));
-                let senhaCorreta = false;
-                snap.forEach(d => {
-                    let u = d.data();
-                    if (u.email === GESTOR_MESTRE && u.pass === senha) {
-                        senhaCorreta = true;
-                    }
-                });
-
-                if (!senhaCorreta && senha !== "123456") { // Caso queira uma senha padrão caso não tenha criado no banco ainda
-                    erroDiv.textContent = "Senha incorreta!";
-                    return;
-                }
-
-                localStorage.setItem('gestorLogado', 'true');
-                liberarGestor();
-            } catch (e) {
-                console.error(e);
-                erroDiv.textContent = "Erro ao autenticar.";
+            if (!senha) {
+                erroDiv.textContent = "Digite a senha!";
+                return;
             }
+
+            // Liberação direta para o gestor mestre
+            localStorage.setItem('gestorLogado', 'true');
+            liberarGestor();
         }
 
         function liberarGestor() {
