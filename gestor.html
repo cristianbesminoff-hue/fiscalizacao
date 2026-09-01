@@ -18,6 +18,9 @@
         button { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         button:hover { background: #1d4ed8; }
         button.sair { background: #dc2626; }
+        button.btn-aprovar { background: #16a34a; padding: 4px 8px; font-size: 11px; }
+        button.btn-rejeitar { background: #dc2626; padding: 4px 8px; font-size: 11px; }
+        button.btn-imprimir { background: #0284c7; margin-top: 10px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; }
@@ -30,7 +33,24 @@
         .badge-modulo { background: #e0f2fe; color: #0369a1; }
         
         .hidden { display: none; }
-        .detalhes-box { background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-top: 5px; }
+        .detalhes-box { background: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; border-radius: 4px; margin-top: 5px; }
+        
+        /* Estilos para as Fotos */
+        .galeria-fotos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .galeria-fotos img { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; transition: transform 0.2s; }
+        .galeria-fotos img:hover { transform: scale(1.05); }
+
+        /* Abas de Navegação no Painel */
+        .abas-navegacao { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #64748b; }
+        .tab-btn.ativo { background: #0f172a; }
+
+        @media print {
+            body { background: white; }
+            header, .abas-navegacao, .card:not(.imprimir-card), button { display: none !important; }
+            .detalhes-box { border: none; background: white; padding: 0; }
+            .galeria-fotos img { max-width: 150px; max-height: 150px; page-break-inside: avoid; }
+        }
     </style>
 </head>
 <body>
@@ -59,62 +79,92 @@
         </header>
 
         <div class="container">
-            <!-- FILTROS -->
-            <div class="card">
-                <h3>Filtrar Relatório de Vistorias</h3>
-                <div class="grid-filtros">
-                    <div>
-                        <label>Módulo:</label>
-                        <select id="filtro-modulo" onchange="aplicarFiltros()">
-                            <option value="TODOS">Todos os Módulos</option>
-                            <option value="CLIENTE">CLIENTE</option>
-                            <option value="REDE">REDE</option>
-                        </select>
+            <!-- ABAS -->
+            <div class="abas-navegacao">
+                <button class="tab-btn ativo" id="btn-tab-vistorias" onclick="mudarAba('vistorias')">Relatório de Vistorias</button>
+                <button class="tab-btn" id="btn-tab-usuarios" onclick="mudarAba('usuarios')">Aprovação / Gerenciar Usuários</button>
+            </div>
+
+            <!-- SEÇÃO DE VISTORIAS -->
+            <div id="secao-vistorias">
+                <div class="card">
+                    <h3>Filtrar Relatório de Vistorias</h3>
+                    <div class="grid-filtros">
+                        <div>
+                            <label>Módulo:</label>
+                            <select id="filtro-modulo" onchange="aplicarFiltros()">
+                                <option value="TODOS">Todos os Módulos</option>
+                                <option value="CLIENTE">CLIENTE</option>
+                                <option value="REDE">REDE</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Situação:</label>
+                            <select id="filtro-situacao" onchange="aplicarFiltros()">
+                                <option value="TODOS">Todas</option>
+                                <option value="APROVADO">APROVADO</option>
+                                <option value="PENDENCIA-REFAZER">PENDÊNCIA</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Buscar por Protocolo/Cidade:</label>
+                            <input type="text" id="filtro-texto" onkeyup="aplicarFiltros()" placeholder="Ex: Canoas, 12345...">
+                        </div>
                     </div>
-                    <div>
-                        <label>Situação:</label>
-                        <select id="filtro-situacao" onchange="aplicarFiltros()">
-                            <option value="TODOS">Todas</option>
-                            <option value="APROVADO">APROVADO</option>
-                            <option value="PENDENCIA-REFAZER">PENDÊNCIA</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Buscar por Protocolo/Cidade:</label>
-                        <input type="text" id="filtro-texto" onkeyup="aplicarFiltros()" placeholder="Ex: Canoas, 12345...">
+                </div>
+
+                <div class="card">
+                    <h3>Vistorias Recebidas (<span id="total-vistorias">0</span>)</h3>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Módulo</th>
+                                    <th>Técnico Qualidade</th>
+                                    <th>Protocolo</th>
+                                    <th>Cidade/UF</th>
+                                    <th>Executor</th>
+                                    <th>Situação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-vistorias">
+                                <tr><td colspan="8">Carregando vistorias...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- LISTAGEM -->
-            <div class="card">
-                <h3>Vistorias Recebidas (<span id="total-vistorias">0</span>)</h3>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data/Hora</th>
-                                <th>Módulo</th>
-                                <th>Técnico Qualidade</th>
-                                <th>Protocolo</th>
-                                <th>Cidade/UF</th>
-                                <th>Executor</th>
-                                <th>Situação</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-vistorias">
-                            <tr><td colspan="8">Carregando vistorias...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- SEÇÃO DE GESTÃO DE USUÁRIOS -->
+            <div id="secao-usuarios" class="hidden">
+                <div class="card">
+                    <h3>Aprovação e Gestão de Cadastros</h3>
+                    <p style="font-size: 13px; color: #64748b;">Aprove novos técnicos ou remova o acesso de usuários cadastrados no sistema.</p>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome / E-mail</th>
+                                    <th>Status Atual</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-usuarios">
+                                <tr><td colspan="3">Carregando usuários...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
@@ -129,16 +179,17 @@
         const db = getFirestore(app);
 
         let dadosVistorias = [];
+        let dadosUsuarios = [];
 
         window.loginGestor = function() {
             const email = document.getElementById('gestor-email').value.trim();
             const senha = document.getElementById('gestor-senha').value.trim();
             
-            // Validação simples (Pode ajustar as credenciais conforme seu uso)
             if (email !== "" && senha !== "") {
                 document.getElementById('area-auth').classList.add('hidden');
                 document.getElementById('area-painel').classList.remove('hidden');
                 carregarVistorias();
+                carregarUsuarios();
             } else {
                 document.getElementById('erro-login').textContent = "Informe usuário e senha válidos.";
             }
@@ -148,6 +199,20 @@
             location.reload();
         };
 
+        window.mudarAba = function(aba) {
+            if (aba === 'vistorias') {
+                document.getElementById('secao-vistorias').classList.remove('hidden');
+                document.getElementById('secao-usuarios').classList.add('hidden');
+                document.getElementById('btn-tab-vistorias').classList.add('ativo');
+                document.getElementById('btn-tab-usuarios').classList.remove('ativo');
+            } else {
+                document.getElementById('secao-vistorias').classList.add('hidden');
+                document.getElementById('secao-usuarios').classList.remove('hidden');
+                document.getElementById('btn-tab-usuarios').classList.add('ativo');
+                document.getElementById('btn-tab-vistorias').classList.remove('ativo');
+            }
+        };
+
         async function carregarVistorias() {
             const tbody = document.getElementById('tabela-vistorias');
             tbody.innerHTML = '<tr><td colspan="8">Carregando banco de dados...</td></tr>';
@@ -155,19 +220,81 @@
             try {
                 const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
                 dadosVistorias = [];
-                snap.forEach(doc => {
-                    dadosVistorias.push({ id: doc.id, ...doc.data() });
+                snap.forEach(docSnap => {
+                    dadosVistorias.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
-                // Ordenar da mais recente para a mais antiga
                 dadosVistorias.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
                 aplicarFiltros();
             } catch (e) {
                 console.error("Erro ao buscar relatórios:", e);
                 tbody.innerHTML = '<tr><td colspan="8" style="color:red;">Erro ao carregar dados do Firebase.</td></tr>';
             }
         }
+
+        async function carregarUsuarios() {
+            const tbody = document.getElementById('tabela-usuarios');
+            tbody.innerHTML = '<tr><td colspan="3">Carregando usuários...</td></tr>';
+
+            try {
+                // Modifique "usuarios" para o nome exato da sua collection de cadastros no Firestore se for diferente
+                const snap = await getDocs(collection(db, "usuarios")); 
+                dadosUsuarios = [];
+                snap.forEach(docSnap => {
+                    dadosUsuarios.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                renderizarTabelaUsuarios();
+            } catch (e) {
+                console.error("Erro ao buscar usuários:", e);
+                tbody.innerHTML = '<tr><td colspan="3" style="color:red;">Coleção de usuários não encontrada ou sem permissão.</td></tr>';
+            }
+        }
+
+        function renderizarTabelaUsuarios() {
+            const tbody = document.getElementById('tabela-usuarios');
+            tbody.innerHTML = '';
+
+            if (dadosUsuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">Nenhum usuário cadastrado encontrado.</td></tr>';
+                return;
+            }
+
+            dadosUsuarios.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${user.nome || user.email || 'Usuário'}</b><br><small style="color:#64748b">${user.email || ''}</small></td>
+                    <td><span class="badge ${user.aprovado ? 'badge-aprovado' : 'badge-reprovado'}">${user.aprovado ? 'Aprovado' : 'Pendente'}</span></td>
+                    <td>
+                        ${!user.aprovado ? `<button class="btn-aprovar" onclick="aprovarUsuario('${user.id}')">Aprovar</button>` : ''}
+                        <button class="btn-rejeitar" onclick="excluirUsuario('${user.id}')">Excluir / Rejeitar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.aprovarUsuario = async function(id) {
+            try {
+                await updateDoc(doc(db, "usuarios", id), { aprovado: true });
+                alert("Usuário aprovado com sucesso!");
+                carregarUsuarios();
+            } catch (e) {
+                alert("Erro ao aprovar usuário: " + e.message);
+            }
+        };
+
+        window.excluirUsuario = async function(id) {
+            if (confirm("Tem certeza que deseja excluir/rejeitar este usuário?")) {
+                try {
+                    await deleteDoc(doc(db, "usuarios", id));
+                    alert("Usuário removido com sucesso!");
+                    carregarUsuarios();
+                } catch (e) {
+                    alert("Erro ao excluir usuário: " + e.message);
+                }
+            }
+        };
 
         window.aplicarFiltros = function() {
             const mod = document.getElementById('filtro-modulo').value;
@@ -232,7 +359,27 @@
                         detalhesHTML += `<li><b>${chave}:</b> ${valor}</li>`;
                     }
                 }
-                detalhesHTML += `</ul></div>`;
+                detalhesHTML += `</ul>`;
+
+                // Tratamento das Fotos do Relato para exibição correta
+                let fotosHTML = '';
+                // Procura por campos comuns de fotos no registro (ajuste o nome do array se necessário, ex: fotos, imagens, etc)
+                const listaFotos = item.fotos || item.imagens || item.arquivosFotos || [];
+                if (Array.isArray(listaFotos) && listaFotos.length > 0) {
+                    fotosHTML += `<div style="margin-top: 15px;"><b>Fotos do Relato:</b><div class="galeria-fotos">`;
+                    listaFotos.forEach(fotoUrl => {
+                        fotosHTML += `<img src="${fotoUrl}" alt="Foto da Vistoria" onclick="window.open('${fotoUrl}', '_blank')">`;
+                    });
+                    fotosHTML += `</div></div>`;
+                } else {
+                    fotosHTML += `<p style="margin-top: 15px; font-size:12px; color:#64748b;">Nenhuma foto anexada a este relato.</p>`;
+                }
+
+                detalhesHTML += fotosHTML;
+                
+                // Botão de Impressão da Ordem/Relatório com fotos
+                detalhesHTML += `<br><button class="btn-imprimir" onclick="window.print()">Imprimir Relatório / PDF</button>`;
+                detalhesHTML += `</div>`;
 
                 trDetalhes.innerHTML = `<td colspan="8">${detalhesHTML}</td>`;
 
