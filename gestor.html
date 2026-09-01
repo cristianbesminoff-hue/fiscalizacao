@@ -42,7 +42,7 @@
             <h2>Acesso do Gestor</h2>
             <div id="erro-gestor" class="erro"></div>
             <label>E-mail:</label>
-            <input type="email" id="gestor-email" placeholder="email@dominio.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <input type="email" id="gestor-email" placeholder="gestor@admin.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <label>Senha:</label>
             <input type="password" id="gestor-senha" placeholder="Senha" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <button onclick="fazerLoginGestor()" style="background: #2563eb; color: white; width: 100%; padding: 12px;">Entrar no Painel</button>
@@ -257,19 +257,20 @@
             renderizarListaVistorias(filtradas);
         }
 
-        // Função para gerar PDF em alta definição
+        // Função para gerar PDF estilo impressão ajustado à folha A4 sem cortes
         window.gerarPdfVistoria = function(idDoc, protocolo) {
             const elemento = document.getElementById(`vistoria-${idDoc}`);
             const opt = {
-                margin:       10,
+                margin:       [10, 10, 10, 10], // Margens de segurança em milímetros
                 filename:     `Vistoria_Protocolo_${protocolo || idDoc}.pdf`,
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { 
-                    scale: 3,           // Alta resolução para evitar fotos borradas
+                    scale: 2,           
                     useCORS: true,      
-                    letterRendering: true 
+                    letterRendering: true,
+                    scrollY: 0
                 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
             };
 
             const botoesAcao = elemento.querySelector('.acoes-vistoria');
