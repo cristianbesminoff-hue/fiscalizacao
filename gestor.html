@@ -3,66 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Gestor - Vistorias</title>
+    <title>Painel do Gestor - Relatório de Vistorias</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
-        header { background: #d97706; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 15px; max-width: 800px; margin: auto; }
-        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        button { background: #d97706; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background: #b45309; }
-        button.sair { background: #dc2626; width: auto; padding: 8px 15px; font-size: 14px; margin: 0; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #333; }
+        header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; max-width: 1100px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        h2, h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0; }
+        
+        .grid-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        label { font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        
+        button { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        button.sair { background: #dc2626; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; color: #475569; }
+        tr:hover { background: #f1f5f9; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .badge-aprovado { background: #dcfce7; color: #15803d; }
+        .badge-reprovado { background: #fee2e2; color: #b91c1c; }
+        .badge-modulo { background: #e0f2fe; color: #0369a1; }
+        
         .hidden { display: none; }
-        .lista-vistorias, .lista-usuarios { background: #f8fafc; border-left: 4px solid #d97706; padding: 12px; margin-top: 10px; border-radius: 4px; font-size: 13px; }
-        .status-aprovado { color: #16a34a; font-weight: bold; }
-        .status-reprovado { color: #dc2626; font-weight: bold; }
-        .btn-aprovar { background: #16a34a; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; }
-        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; }
-        .erro { color: #dc2626; font-size: 13px; text-align: center; }
+        .detalhes-box { background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN DO GESTOR -->
-    <div id="area-auth-gestor" class="container" style="max-width: 400px; margin-top: 80px;">
+    <!-- LOGIN GESTOR -->
+    <div id="area-auth" class="container" style="max-width: 400px; margin-top: 60px;">
         <div class="card">
-            <button style="background: #64748b; margin-top:0; margin-bottom:15px; padding:8px;" onclick="window.location.href='index.html'">← Voltar ao Início</button>
-            <h2>Acesso Restrito - Gestor</h2>
-            <div id="erro-gestor" class="erro"></div>
-            <input type="email" id="gestor-email" placeholder="E-mail do Gestor">
-            <input type="password" id="gestor-senha" placeholder="Senha">
-            <button onclick="fazerLoginGestor()">Entrar no Painel</button>
+            <button style="background: #64748b; margin-bottom:15px; padding:6px 12px;" onclick="window.location.href='index.html'">← Voltar ao Início</button>
+            <h2>Acesso Gestor</h2>
+            <div id="erro-login" style="color:red; font-size:13px; margin-bottom:10px;"></div>
+            <label>E-mail:</label>
+            <input type="email" id="gestor-email" placeholder="gestor@empresa.com">
+            <label style="margin-top:10px;">Senha:</label>
+            <input type="password" id="gestor-senha" placeholder="••••••••">
+            <button onclick="loginGestor()" style="width: 100%; margin-top: 15px;">Entrar no Painel</button>
         </div>
     </div>
 
-    <!-- PAINEL GLOBAL DO GESTOR -->
-    <div id="area-painel-gestor" class="hidden">
+    <!-- PAINEL PRINCIPAL -->
+    <div id="area-painel" class="hidden">
         <header>
             <div>
-                <span style="font-weight: bold;">Painel do Gestor (cristianbesminoff@gmail.com)</span>
+                <span id="saudacao-gestor" style="font-weight: bold;">Painel do Gestor</span>
             </div>
             <button class="sair" onclick="sairGestor()">Sair</button>
         </header>
 
         <div class="container">
+            <!-- FILTROS -->
             <div class="card">
-                <h3>Gerenciamento de Técnicos</h3>
-                <div id="lista-usuarios-pendentes">Carregando usuários...</div>
+                <h3>Filtrar Relatório de Vistorias</h3>
+                <div class="grid-filtros">
+                    <div>
+                        <label>Módulo:</label>
+                        <select id="filtro-modulo" onchange="aplicarFiltros()">
+                            <option value="TODOS">Todos os Módulos</option>
+                            <option value="CLIENTE">CLIENTE</option>
+                            <option value="REDE">REDE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Situação:</label>
+                        <select id="filtro-situacao" onchange="aplicarFiltros()">
+                            <option value="TODOS">Todas</option>
+                            <option value="APROVADO">APROVADO</option>
+                            <option value="PENDENCIA-REFAZER">PENDÊNCIA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Buscar por Protocolo/Cidade:</label>
+                        <input type="text" id="filtro-texto" onkeyup="aplicarFiltros()" placeholder="Ex: Canoas, 12345...">
+                    </div>
+                </div>
             </div>
 
+            <!-- LISTAGEM -->
             <div class="card">
-                <h3>Visão Global de Vistorias</h3>
-                <p>Total de vistorias na base: <strong id="total-geral">0</strong></p>
-                <div id="lista-gestor-vistorias">Carregando relatórios...</div>
+                <h3>Vistorias Recebidas (<span id="total-vistorias">0</span>)</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Módulo</th>
+                                <th>Técnico Qualidade</th>
+                                <th>Protocolo</th>
+                                <th>Cidade/UF</th>
+                                <th>Executor</th>
+                                <th>Situação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-vistorias">
+                            <tr><td colspan="8">Carregando vistorias...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
@@ -76,106 +128,125 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const GESTOR_MESTRE = "cristianbesminoff@gmail.com";
+        let dadosVistorias = [];
 
-        if (localStorage.getItem('gestorLogado') === 'true') {
-            liberarGestor();
-        }
-
-        window.fazerLoginGestor = function() {
-            const email = document.getElementById('gestor-email').value.trim().toLowerCase();
+        window.loginGestor = function() {
+            const email = document.getElementById('gestor-email').value.trim();
             const senha = document.getElementById('gestor-senha').value.trim();
-            const erroDiv = document.getElementById('erro-gestor');
-            erroDiv.textContent = "";
-
-            if (email !== GESTOR_MESTRE) {
-                erroDiv.textContent = "Acesso restrito apenas ao e-mail do gestor!";
-                return;
+            
+            // Validação simples (Pode ajustar as credenciais conforme seu uso)
+            if (email !== "" && senha !== "") {
+                document.getElementById('area-auth').classList.add('hidden');
+                document.getElementById('area-painel').classList.remove('hidden');
+                carregarVistorias();
+            } else {
+                document.getElementById('erro-login').textContent = "Informe usuário e senha válidos.";
             }
-
-            if (!senha) {
-                erroDiv.textContent = "Digite a senha!";
-                return;
-            }
-
-            localStorage.setItem('gestorLogado', 'true');
-            liberarGestor();
-        }
-
-        function liberarGestor() {
-            document.getElementById('area-auth-gestor').classList.add('hidden');
-            document.getElementById('area-painel-gestor').classList.remove('hidden');
-            carregarDadosGestor();
-        }
+        };
 
         window.sairGestor = function() {
-            localStorage.removeItem('gestorLogado');
             location.reload();
-        }
+        };
 
-        async function carregarDadosGestor() {
-            const cUsuarios = document.getElementById('lista-usuarios-pendentes');
-            const cVistorias = document.getElementById('lista-gestor-vistorias');
+        async function carregarVistorias() {
+            const tbody = document.getElementById('tabela-vistorias');
+            tbody.innerHTML = '<tr><td colspan="8">Carregando banco de dados...</td></tr>';
 
             try {
-                // Usuários
-                const snapUser = await getDocs(collection(db, "usuarios_sistema"));
-                let usuarios = [];
-                snapUser.forEach(d => {
-                    let u = { id: d.id, ...d.data() };
-                    if (u.perfil !== 'gestor') usuarios.push(u);
+                const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
+                dadosVistorias = [];
+                snap.forEach(doc => {
+                    dadosVistorias.push({ id: doc.id, ...doc.data() });
                 });
 
-                cUsuarios.innerHTML = usuarios.length === 0 ? '<p>Nenhum técnico cadastrado.</p>' : '';
-                usuarios.forEach(u => {
-                    let corStatus = u.status === 'ativo' ? 'status-aprovado' : (u.status === 'rejeitado' ? 'status-reprovado' : '');
-                    cUsuarios.innerHTML += `
-                        <div class="lista-usuarios">
-                            <b>Nome:</b> ${u.nome} | <b>E-mail:</b> ${u.email}<br>
-                            <b>Status atual:</b> <span class="${corStatus}">${u.status.toUpperCase()}</span><br><br>
-                            <button class="btn-aprovar" onclick="mudarStatus('${u.id}', 'ativo')">Aprovar</button>
-                            <button class="btn-rejeitar" onclick="mudarStatus('${u.id}', 'rejeitado')">Rejeitar</button>
-                            <button style="background: #475569; padding: 6px 12px; font-size: 12px; width: auto;" onclick="excluirTecnico('${u.id}', '${u.nome}')">Excluir da Base</button>
-                        </div>
-                    `;
-                });
+                // Ordenar da mais recente para a mais antiga
+                dadosVistorias.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-                // Vistorias
-                const snapVist = await getDocs(collection(db, "fiscalizacoes_modulos"));
-                let vistorias = [];
-                snapVist.forEach(d => vistorias.push(d.data()));
-                vistorias.sort((a,b) => b.timestamp - a.timestamp);
-
-                document.getElementById('total-geral').textContent = vistorias.length;
-                cVistorias.innerHTML = vistorias.length === 0 ? '<p>Nenhuma vistoria registrada.</p>' : '';
-                vistorias.forEach(v => {
-                    let cor = v.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
-                    cVistorias.innerHTML += `
-                        <div class="lista-vistorias">
-                            <b>Técnico:</b> ${v.nomeUsuarioLogado} | <b>Módulo:</b> ${v.modulo}<br>
-                            <b>Protocolo:</b> ${v.protocolo} (${v.cidade}/${v.estado}) | <b>Status:</b> <span class="${cor}">${v.situacaoFinal}</span><br>
-                            <small>Enviado em: ${v.dataEnvio}</small>
-                        </div>
-                    `;
-                });
+                aplicarFiltros();
             } catch (e) {
-                console.error(e);
+                console.error("Erro ao buscar relatórios:", e);
+                tbody.innerHTML = '<tr><td colspan="8" style="color:red;">Erro ao carregar dados do Firebase.</td></tr>';
             }
         }
 
-        window.mudarStatus = async function(id, novoStatus) {
-            await updateDoc(doc(db, "usuarios_sistema", id), { status: novoStatus });
-            alert(`Conta ${novoStatus === 'ativo' ? 'aprovada' : 'rejeitada'} com sucesso!`);
-            carregarDadosGestor();
+        window.aplicarFiltros = function() {
+            const mod = document.getElementById('filtro-modulo').value;
+            const sit = document.getElementById('filtro-situacao').value;
+            const txt = document.getElementById('filtro-texto').value.toLowerCase().trim();
+
+            let filtrados = dadosVistorias.filter(item => {
+                const matchMod = mod === 'TODOS' || item.modulo === mod;
+                const matchSit = sit === 'TODOS' || item.situacaoFinal === sit;
+                const matchTxt = !txt || 
+                    (item.protocolo && item.protocolo.toLowerCase().includes(txt)) || 
+                    (item.cidade && item.cidade.toLowerCase().includes(txt)) ||
+                    (item.tecQualidade && item.tecQualidade.toLowerCase().includes(txt));
+                
+                return matchMod && matchSit && matchTxt;
+            });
+
+            document.getElementById('total-vistorias').textContent = filtrados.length;
+            renderizarTabela(filtrados);
+        };
+
+        function renderizarTabela(lista) {
+            const tbody = document.getElementById('tabela-vistorias');
+            tbody.innerHTML = '';
+
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8">Nenhuma vistoria encontrada.</td></tr>';
+                return;
+            }
+
+            lista.forEach((item, index) => {
+                const badgeStatus = item.situacaoFinal === 'APROVADO' 
+                    ? '<span class="badge badge-aprovado">Aprovado</span>' 
+                    : '<span class="badge badge-reprovado">Pendência</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.dataEnvio || '-'}</td>
+                    <td><span class="badge badge-modulo">${item.modulo || 'CLIENTE'}</span></td>
+                    <td><b>${item.tecQualidade || item.nomeUsuarioLogado || '-'}</b></td>
+                    <td>${item.protocolo || '-'}</td>
+                    <td>${item.cidade || '-'}/${item.estado || ''}</td>
+                    <td>${item.tecExecutou || '-'}</td>
+                    <td>${badgeStatus}</td>
+                    <td>
+                        <button style="padding:4px 8px; font-size:11px;" onclick="toggleDetalhes('${index}')">Ver Detalhes</button>
+                    </td>
+                `;
+
+                const trDetalhes = document.createElement('tr');
+                trDetalhes.id = `detalhe-${index}`;
+                trDetalhes.className = 'hidden';
+                
+                let detalhesHTML = `<div class="detalhes-box">
+                    <p><b>Empresa Executora:</b> ${item.empresa || 'N/A'} | <b>Tipo Vistoria:</b> ${item.tipoVistoria || 'N/A'}</p>
+                    <p><b>Observações:</b> ${item.observacoes || 'Nenhuma'}</p>
+                    <hr style="border:0; border-top:1px solid #cbd5e1;">
+                    <b>Itens Avaliados:</b><ul>`;
+
+                if (item.detalhesModulo) {
+                    for (const [chave, valor] of Object.entries(item.detalhesModulo)) {
+                        detalhesHTML += `<li><b>${chave}:</b> ${valor}</li>`;
+                    }
+                }
+                detalhesHTML += `</ul></div>`;
+
+                trDetalhes.innerHTML = `<td colspan="8">${detalhesHTML}</td>`;
+
+                tbody.appendChild(tr);
+                tbody.appendChild(trDetalhes);
+            });
         }
 
-        window.excluirTecnico = async function(id, nome) {
-            if (confirm(`Deseja realmente excluir o técnico ${nome} da base de dados? Ele perderá o acesso ao sistema.`)) {
-                await deleteDoc(doc(db, "usuarios_sistema", id));
-                alert("Técnico excluído com sucesso!");
-                carregarDadosGestor();
+        window.toggleDetalhes = function(index) {
+            const el = document.getElementById(`detalhe-${index}`);
+            if (el) {
+                el.classList.toggle('hidden');
             }
-        }
+        };
     </script>
 </body>
 </html>
