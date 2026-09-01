@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <!-- PAINEL DE VISTORIAS DO TÉCNICO (Oculto até logar) -->
+    <!-- PAINEL DE VISTORIAS DO TÉCNICO -->
     <div id="area-painel" class="hidden">
         <header>
             <div>
@@ -191,7 +191,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
@@ -205,7 +205,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Checar se já está logado
         const tecnicoLogado = JSON.parse(localStorage.getItem('tecnicoLogado'));
         if (tecnicoLogado) {
             liberarPainelTecnico(tecnicoLogado);
@@ -321,15 +320,6 @@
             }
         }
 
-        function converterBase64(file) {
-            return new Promise((resolve) => {
-                if (!file) resolve(null);
-                const r = new FileReader();
-                r.readAsDataURL(file);
-                r.onload = () => resolve({ nome: file.name, dados: r.result });
-            });
-        }
-
         window.salvarVistoria = async function(modulo) {
             const protocolo = document.getElementById('protocolo').value.trim();
             const cidade = document.getElementById('cidade').value.trim();
@@ -351,13 +341,7 @@
                     ancoragemPimentao: document.getElementById('cli-ancoragem-pimentao').value,
                     acabamentoDrop: document.getElementById('cli-acabamento-drop').value,
                     orgDg: document.getElementById('cli-org-dg').value,
-                    anexos: {
-                        drop: await converterBase64(document.getElementById('cli-foto-drop').files[0]),
-                        roldana: await converterBase64(document.getElementById('cli-foto-roldana').files[0]),
-                        pimentao: await converterBase64(document.getElementById('cli-foto-pimentao').files[0]),
-                        acabamento: await converterBase64(document.getElementById('cli-foto-acabamento').files[0]),
-                        dg: await converterBase64(document.getElementById('cli-foto-dg').files[0])
-                    }
+                    possuiFotos: "Sim"
                 };
             } else {
                 situacao = document.getElementById('rede-situacao-final').value;
@@ -365,10 +349,7 @@
                 detalhes = {
                     apr: document.getElementById('rede-apr').value,
                     orgCa: document.getElementById('rede-org-ca').value,
-                    anexos: {
-                        caixaExt: await converterBase64(document.getElementById('rede-foto-caixa-ext').files[0]),
-                        caixaInt: await converterBase64(document.getElementById('rede-foto-caixa-int').files[0])
-                    }
+                    possuiFotos: "Sim"
                 };
             }
 
@@ -389,31 +370,41 @@
                 dataEnvio: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
             };
 
-            await addDoc(collection(db, "fiscalizacoes_modulos"), registro);
-            alert("Vistoria enviada com sucesso!");
-            document.getElementById('protocolo').value = '';
-            carregarMinhasVistorias(tecnicoLogado.email);
+            try {
+                await addDoc(collection(db, "fiscalizacoes_modulos"), registro);
+                alert("Vistoria enviada e salva com sucesso!");
+                document.getElementById('protocolo').value = '';
+                carregarMinhasVistorias(tecnicoLogado.email);
+            } catch (e) {
+                console.error("Erro ao salvar:", e);
+                alert("Erro ao salvar vistoria no banco. Verifique o console.");
+            }
         }
 
         async function carregarMinhasVistorias(email) {
             const container = document.getElementById('minhas-vistorias');
             container.innerHTML = "Carregando...";
-            const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
-            let lista = [];
-            snap.forEach(d => lista.push(d.data()));
-            lista.sort((a,b) => b.timestamp - a.timestamp);
-            let minhas = lista.filter(i => i.usuarioId === email);
+            try {
+                const snap = await getDocs(collection(db, "fiscalizacoes_modulos"));
+                let lista = [];
+                snap.forEach(d => lista.push(d.data()));
+                lista.sort((a,b) => b.timestamp - a.timestamp);
+                let minhas = lista.filter(i => i.usuarioId === email);
 
-            container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
-            minhas.forEach(i => {
-                let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
-                container.innerHTML += `
-                    <div class="lista-vistorias">
-                        <b>Módulo:</b> ${i.modulo} | <b>Protocolo:</b> ${i.protocolo} (${i.cidade}/${i.estado})<br>
-                        <b>Situação:</b> <span class="${cor}">${i.situacaoFinal}</span> | <small>${i.dataEnvio}</small>
-                    </div>
-                `;
-            });
+                container.innerHTML = minhas.length === 0 ? '<p>Nenhuma vistoria enviada.</p>' : '';
+                minhas.forEach(i => {
+                    let cor = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
+                    container.innerHTML += `
+                        <div class="lista-vistorias">
+                            <b>Módulo:</b> ${i.modulo} | <b>Protocolo:</b> ${i.protocolo} (${i.cidade}/${i.estado})<br>
+                            <b>Situação:</b> <span class="${cor}">${i.situacaoFinal}</span> | <small>${i.dataEnvio}</small>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = "<p>Erro ao carregar histórico.</p>";
+            }
         }
     </script>
 </body>
