@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Gestor - Vistorias</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        header { background: #d97706; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2, h3 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { background: #d97706; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #b45309; }
+        button.sair { background: #dc2626; width: auto; padding: 8px 15px; font-size: 14px; margin: 0; }
+        .hidden { display: none; }
+        .lista-vistorias, .lista-usuarios { background: #f8fafc; border-left: 4px solid #d97706; padding: 12px; margin-top: 10px; border-radius: 4px; font-size: 13px; }
+        .status-aprovado { color: #16a34a; font-weight: bold; }
+        .status-reprovado { color: #dc2626; font-weight: bold; }
+        .btn-aprovar { background: #16a34a; padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; }
+        .btn-rejeitar { background: #dc2626; padding: 6px 12px; font-size: 12px; width: auto; }
+        .erro { color: #dc2626; font-size: 13px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN DO GESTOR -->
+    <div id="area-auth-gestor" class="container" style="max-width: 400px; margin-top: 80px;">
+        <div class="card">
+            <button style="background: #64748b; margin-top:0; margin-bottom:15px; padding:8px;" onclick="window.location.href='index.html'">← Voltar ao Início</button>
+            <h2>Acesso Restrito - Gestor</h2>
+            <div id="erro-gestor" class="erro"></div>
+            <input type="email" id="gestor-email" placeholder="E-mail do Gestor">
+            <input type="password" id="gestor-senha" placeholder="Senha">
+            <button onclick="fazerLoginGestor()">Entrar no Painel</button>
+        </div>
+    </div>
+
+    <!-- PAINEL GLOBAL DO GESTOR -->
+    <div id="area-painel-gestor" class="hidden">
+        <header>
+            <div>
+                <span style="font-weight: bold;">Painel do Gestor (cristianbesminoff@gmail.com)</span>
+            </div>
+            <button class="sair" onclick="sairGestor()">Sair</button>
+        </header>
+
+        <div class="container">
+            <div class="card">
+                <h3>Aprovação de Contas de Técnicos</h3>
+                <div id="lista-usuarios-pendentes">Carregando solicitações...</div>
+            </div>
+
+            <div class="card">
+                <h3>Visão Global de Vistorias</h3>
+                <p>Total de vistorias na base: <strong id="total-geral">0</strong></p>
+                <div id="lista-gestor-vistorias">Carregando relatórios...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5bbJ5g8jtWjI0-13dWFifgZxc3SK0-g",
+            authDomain: "fiscalizar-ef7de.firebaseapp.com",
+            projectId: "fiscalizar-ef7de",
+            storageBucket: "fiscalizar-ef7de.firebasestorage.app",
+            messagingSenderId: "392888202041",
+            appId: "1:392888202041:web:d45e8ceadfed5bf200eee8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const GESTOR_MESTRE = "cristianbesminoff@gmail.com";
+
+        if (localStorage.getItem('gestorLogado') === 'true') {
+            liberarGestor();
+        }
+
+        window.fazerLoginGestor = async function() {
+            const email = document.getElementById('gestor-email').value.trim().toLowerCase();
+            const senha = document.getElementById('gestor-senha').value.trim();
+            const erroDiv = document.getElementById('erro-gestor');
+            erroDiv.textContent = "";
+
+            if (email !== GESTOR_MESTRE) {
+                erroDiv.textContent = "Acesso restrito apenas ao gestor autorizado!";
+                return;
+            }
+
+            try {
+                const snap = await getDocs(collection(db, "usuarios_sistema"));
+                let senhaCorreta = false;
+                snap.forEach(d => {
+                    let u = d.data();
+                    if (u.email === GESTOR_MESTRE && u.pass === senha) {
+                        senhaCorreta = true;
+                    }
+                });
+
+                if (!senhaCorreta && senha !== "123456") { // Caso queira uma senha padrão caso não tenha criado no banco ainda
+                    erroDiv.textContent = "Senha incorreta!";
+                    return;
+                }
+
+                localStorage.setItem('gestorLogado', 'true');
+                liberarGestor();
+            } catch (e) {
+                console.error(e);
+                erroDiv.textContent = "Erro ao autenticar.";
+            }
+        }
+
+        function liberarGestor() {
+            document.getElementById('area-auth-gestor').classList.add('hidden');
+            document.getElementById('area-painel-gestor').classList.remove('hidden');
+            carregarDadosGestor();
+        }
+
+        window.sairGestor = function() {
+            localStorage.removeItem('gestorLogado');
+            location.reload();
+        }
+
+        async function carregarDadosGestor() {
+            const cUsuarios = document.getElementById('lista-usuarios-pendentes');
+            const cVistorias = document.getElementById('lista-gestor-vistorias');
+
+            try {
+                // Usuários
+                const snapUser = await getDocs(collection(db, "usuarios_sistema"));
+                let pendentes = [];
+                snapUser.forEach(d => {
+                    let u = { id: d.id, ...d.data() };
+                    if (u.status === "pendente") pendentes.push(u);
+                });
+
+                cUsuarios.innerHTML = pendentes.length === 0 ? '<p>Nenhuma conta pendente de aprovação.</p>' : '';
+                pendentes.forEach(u => {
+                    cUsuarios.innerHTML += `
+                        <div class="lista-usuarios">
+                            <b>Nome:</b> ${u.nome} | <b>E-mail:</b> ${u.email}<br>
+                            <button class="btn-aprovar" onclick="mudarStatus('${u.id}', 'ativo')">Aprovar</button>
+                            <button class="btn-rejeitar" onclick="mudarStatus('${u.id}', 'rejeitado')">Rejeitar</button>
+                        </div>
+                    `;
+                });
+
+                // Vistorias
+                const snapVist = await getDocs(collection(db, "fiscalizacoes_modulos"));
+                let vistorias = [];
+                snapVist.forEach(d => vistorias.push(d.data()));
+                vistorias.sort((a,b) => b.timestamp - a.timestamp);
+
+                document.getElementById('total-geral').textContent = vistorias.length;
+                cVistorias.innerHTML = vistorias.length === 0 ? '<p>Nenhuma vistoria registrada.</p>' : '';
+                vistorias.forEach(v => {
+                    let cor = v.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-reprovado';
+                    cVistorias.innerHTML += `
+                        <div class="lista-vistorias">
+                            <b>Técnico:</b> ${v.nomeUsuarioLogado} | <b>Módulo:</b> ${v.modulo}<br>
+                            <b>Protocolo:</b> ${v.protocolo} (${v.cidade}/${v.estado}) | <b>Status:</b> <span class="${cor}">${v.situacaoFinal}</span><br>
+                            <small>Enviado em: ${v.dataEnvio}</small>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.mudarStatus = async function(id, novoStatus) {
+            await updateDoc(doc(db, "usuarios_sistema", id), { status: novoStatus });
+            alert(`Conta ${novoStatus === 'ativo' ? 'aprovada' : 'rejeitada'} com sucesso!`);
+            carregarDadosGestor();
+        }
+    </script>
+</body>
+</html>
