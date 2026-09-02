@@ -15,8 +15,8 @@
         th { background: #f8fafc; }
         button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-aprovar { background: #16a34a; color: white; }
-        .btn-rejeitar { background: #dc2626; color: white; }
-        .btn-excluir { background: #7f1d1d; color: white; }
+        .btn-rejeitar { background: #d97706; color: white; }
+        .btn-excluir { background: #dc2626; color: white; }
         .btn-imprimir { background: #2563eb; color: white; }
         .btn-voltar { background: #64748b; color: white; padding: 8px 15px; }
         .hidden { display: none; }
@@ -28,7 +28,7 @@
         .foto-item { background: #fff; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
         .foto-item img { max-width: 150px; max-height: 150px; border-radius: 4px; display: block; }
         .erro { color: #dc2626; text-align: center; margin-bottom: 10px; }
-        .acoes-vistoria { margin-top: 12px; display: flex; gap: 8px; }
+        .acoes-vistoria { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
 
         @media print {
             body { background: white; color: black; }
@@ -62,25 +62,34 @@
         </header>
 
         <div class="container">
-            <!-- SEÇÃO DE GERENCIAMENTO DE TÉCNICOS -->
+            <!-- SEÇÃO DE GERENCIAMENTO DE TÉCNICOS (APROVAR / REJEITAR / EXCLUIR) -->
             <div class="card">
-                <h3>Cadastros de Técnicos Pendentes / Aprovados</h3>
+                <h3>Gerenciamento de Cadastros de Técnicos</h3>
                 <div id="lista-usuarios">Carregando usuários...</div>
             </div>
 
-            <!-- SEÇÃO DE VISTORIAS ENVIADAS COM FOTOS -->
+            <!-- SEÇÃO DE VISTORIAS ENVIADAS COM FILTRO POR TÉCNICO -->
             <div class="card">
                 <h3>Vistorias e Fiscalizações Recebidas</h3>
-                <div style="margin-bottom: 15px;">
-                    <label>Filtrar por Protocolo ou Cidade:</label>
-                    <input type="text" id="filtro-busca" placeholder="Digite para filtrar..." onkeyup="filtrarVistorias()" style="padding: 8px; width: 300px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <label style="margin-top: 0; font-size: 13px;">Filtrar por Técnico:</label>
+                        <select id="filtro-tecnico" onchange="filtrarVistorias()" style="padding: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 4px;">
+                            <option value="">Todos os Técnicos</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2; min-width: 250px;">
+                        <label style="margin-top: 0; font-size: 13px;">Buscar por Protocolo, Cidade ou Empresa:</label>
+                        <input type="text" id="filtro-busca" placeholder="Digite para buscar..." onkeyup="filtrarVistorias()" style="padding: 10px; width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 4px;">
+                    </div>
                 </div>
+
                 <div id="lista-vistorias-gestor">Carregando vistorias...</div>
             </div>
         </div>
     </div>
 
-    <!-- SDKs do Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -98,8 +107,8 @@
         const db = firebase.firestore();
 
         let todasVistoriasGlobal = [];
+        let listaTecnicosGlobal = [];
 
-        // Verifica login armazenado ao carregar a página
         if (localStorage.getItem('gestorLogado') === 'true') {
             liberarPainelGestor();
         }
@@ -131,6 +140,7 @@
 
         async function carregarUsuarios() {
             const container = document.getElementById('lista-usuarios');
+            const selectTecnico = document.getElementById('filtro-tecnico');
             try {
                 const snap = await db.collection("usuarios_sistema").get();
                 if (snap.empty) {
@@ -139,23 +149,34 @@
                 }
 
                 let html = `<table><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></tr>`;
+                let optionsTecnicosHtml = `<option value="">Todos os Técnicos</option>`;
+                listaTecnicosGlobal = [];
+
                 snap.forEach(doc => {
                     const u = doc.data();
                     const id = doc.id;
+                    listaTecnicosGlobal.push({ id, ...u });
+
+                    if (u.status === 'aprovado') {
+                        optionsTecnicosHtml += `<option value="${u.nome}">${u.nome}</option>`;
+                    }
+
                     let statusClass = u.status === 'aprovado' ? 'status-aprovado' : (u.status === 'rejeitado' ? 'status-rejeitado' : 'status-pendente');
                     
                     html += `<tr>
-                        <td>${u.nome || 'N/A'}</td>
+                        <td><b>${u.nome || 'N/A'}</b></td>
                         <td>${u.email || 'N/A'}</td>
                         <td><span class="${statusClass}">${u.status || 'pendente'}</span></td>
                         <td>
                             <button class="btn-aprovar" onclick="atualizarStatusUsuario('${id}', 'aprovado')">Aprovar</button>
                             <button class="btn-rejeitar" onclick="atualizarStatusUsuario('${id}', 'rejeitado')">Rejeitar</button>
+                            <button class="btn-excluir" onclick="excluirUsuario('${id}')">Excluir / Desligar</button>
                         </td>
                     </tr>`;
                 });
                 html += `</table>`;
                 container.innerHTML = html;
+                selectTecnico.innerHTML = optionsTecnicosHtml;
             } catch (e) {
                 console.error(e);
                 container.innerHTML = "<p>Erro ao carregar usuários.</p>";
@@ -170,6 +191,19 @@
             } catch (e) {
                 console.error(e);
                 alert("Erro ao atualizar status.");
+            }
+        }
+
+        window.excluirUsuario = async function(id) {
+            if (confirm("Tem certeza que deseja remover/desligar este técnico do sistema? O acesso dele será permanentemente excluído.")) {
+                try {
+                    await db.collection("usuarios_sistema").doc(id).delete();
+                    alert("Técnico removido com sucesso!");
+                    carregarUsuarios();
+                } catch (e) {
+                    console.error(e);
+                    alert("Erro ao excluir usuário.");
+                }
             }
         }
 
@@ -238,13 +272,13 @@
                     <div class="vistoria-box" id="vistoria-${i.id}">
                         <h3>Relatório de Vistoria - Protocolo: ${i.protocolo || 'N/A'}</h3>
                         <b>Módulo:</b> ${i.modulo || 'N/A'} | <b>Cidade:</b> ${i.cidade || 'N/A'}/${i.estado || ''}<br>
-                        <b>Técnico Qualidade:</b> ${i.tecQualidade || i.nomeUsuarioLogado || 'N/A'} | <b>Empresa:</b> ${i.empresa || 'N/A'}<br>
+                        <b>Técnico Qualidade:</b> <span style="color: var(--primary); font-weight: bold;">${i.tecQualidade || 'N/A'}</span> | <b>Empresa:</b> ${i.empresa || 'N/A'}<br>
                         <b>Situação Final:</b> <span class="${corSituacao}">${i.situacaoFinal || 'N/A'}</span> | <b>Data:</b> ${i.dataEnvio || 'N/A'}<br>
                         <div style="font-size: 13px; color: #475569; margin-top: 8px;">${detalhesTexto}</div>
                         ${i.observacoes ? `<div style="margin-top: 5px;"><b>Obs:</b> ${i.observacoes}</div>` : ''}
                         ${fotosHtml}
                         <div class="acoes-vistoria">
-                            <button class="btn-imprimir" onclick="imprimirVistoria('${i.id}')">Imprimir / Salvar em PDF</button>
+                            <button class="btn-imprimir" onclick="imprimirVistoria('${i.id}')">Imprimir / PDF</button>
                             <button class="btn-excluir" onclick="excluirVistoria('${i.id}')">Excluir do Sistema</button>
                         </div>
                     </div>
@@ -255,12 +289,19 @@
         }
 
         window.filtrarVistorias = function() {
-            const termo = document.getElementById('filtro-busca').value.toLowerCase();
-            const filtradas = todasVistoriasGlobal.filter(i => 
-                (i.protocolo && i.protocolo.toLowerCase().includes(termo)) || 
-                (i.cidade && i.cidade.toLowerCase().includes(termo)) ||
-                (i.empresa && i.empresa.toLowerCase().includes(termo))
-            );
+            const tecnicoSelecionado = document.getElementById('filtro-tecnico').value;
+            const termoBusca = document.getElementById('filtro-busca').value.toLowerCase();
+
+            const filtradas = todasVistoriasGlobal.filter(i => {
+                const bateTecnico = !tecnicoSelecionado || (i.tecQualidade === tecnicoSelecionado);
+                const bateBusca = !termoBusca || 
+                    (i.protocolo && i.protocolo.toLowerCase().includes(termoBusca)) || 
+                    (i.cidade && i.cidade.toLowerCase().includes(termoBusca)) ||
+                    (i.empresa && i.empresa.toLowerCase().includes(termoBusca));
+
+                return bateTecnico && bateBusca;
+            });
+
             renderizarListaVistorias(filtradas);
         }
 
@@ -300,14 +341,14 @@
         }
 
         window.excluirVistoria = async function(idDoc) {
-            if (confirm("Tem certeza que deseja excluir esta vistoria do sistema? Esta ação não pode ser desfeita.")) {
+            if (confirm("Tem certeza que deseja excluir esta vistoria do sistema?")) {
                 try {
                     await db.collection("fiscalizacoes_modulos").doc(idDoc).delete();
-                    alert("Vistoria excluída com sucesso!");
+                    alert("Vistoria excluída!");
                     carregarVistoriasGestor();
                 } catch (e) {
                     console.error(e);
-                    alert("Erro ao excluir vistoria: " + e.message);
+                    alert("Erro ao excluir vistoria.");
                 }
             }
         }
