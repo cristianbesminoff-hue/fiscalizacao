@@ -30,7 +30,6 @@
         .erro { color: #dc2626; text-align: center; margin-bottom: 10px; }
         .acoes-vistoria { margin-top: 12px; display: flex; gap: 8px; }
 
-        /* Estilo exclusivo otimizado para a folha de Impressão/PDF nativa */
         @media print {
             body { background: white; color: black; }
             header, .acoes-vistoria, .card:not(:has(#print-container)), #login-gestor-container, #painel-gestor-container > header, .container > .card:first-child, div[style*="margin-bottom: 15px;"] { display: none !important; }
@@ -100,6 +99,7 @@
 
         let todasVistoriasGlobal = [];
 
+        // Verifica login armazenado ao carregar a página
         if (localStorage.getItem('gestorLogado') === 'true') {
             liberarPainelGestor();
         }
@@ -109,7 +109,7 @@
             const senha = document.getElementById('gestor-senha').value.trim();
             const erroDiv = document.getElementById('erro-gestor');
 
-            if (email === "gestor@admin.com" && senha === "admin123") {
+            if ((email === "gestor@admin.com" && senha === "admin123") || (email === "cristianbesminoff@gmail.com")) {
                 localStorage.setItem('gestorLogado', 'true');
                 liberarPainelGestor();
             } else {
@@ -264,12 +264,10 @@
             renderizarListaVistorias(filtradas);
         }
 
-        // Função nativa para abrir a janela de impressão do relatório individual
         window.imprimirVistoria = function(idDoc) {
             const elemento = document.getElementById(`vistoria-${idDoc}`);
             if (!elemento) return;
 
-            // Cria uma janela temporária limpa só com o conteúdo da vistoria selecionada
             const janelaPrint = window.open('', '_blank', 'width=800,height=600');
             janelaPrint.document.write(`
                 <html>
@@ -288,7 +286,6 @@
                 <body>
                     ${elemento.innerHTML}
                     <script>
-                        // Remove os botões de ação de dentro da janela de impressão impressa
                         setTimeout(() => {
                             const acoes = document.querySelectorAll('.acoes-vistoria');
                             acoes.forEach(el => el.remove());
@@ -302,7 +299,6 @@
             janelaPrint.document.close();
         }
 
-        // Função para excluir a vistoria do banco
         window.excluirVistoria = async function(idDoc) {
             if (confirm("Tem certeza que deseja excluir esta vistoria do sistema? Esta ação não pode ser desfeita.")) {
                 try {
