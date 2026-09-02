@@ -42,6 +42,9 @@
         .btn-enviar:hover { background: #15803d; }
         .btn-voltar { background: var(--text-muted); color: white; width: auto; padding: 8px 15px; font-size: 13px; }
         .btn-voltar:hover { background: #475569; }
+
+        /* Estilo para a lista de itens salvos na tela do técnico */
+        .item-historico { background: #f8fafc; border: 1px solid var(--border); padding: 12px 15px; border-radius: 6px; margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -219,6 +222,14 @@
 
             <button type="submit" class="btn-enviar">Enviar Fiscalização Completa</button>
         </form>
+
+        <!-- CARD DE VISTORIAS ENVIADAS RECENTEMENTE COM NUMERAÇÃO -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>Suas Fiscalizações Enviadas (Nesta Sessão)</h3>
+            <div id="listaHistoricoLocal">
+                <p style="color: var(--text-muted); font-size: 13px;">Nenhuma fiscalização enviada ainda nesta sessão.</p>
+            </div>
+        </div>
     </div>
 
     <!-- SDKs do Firebase (Compat) -->
@@ -238,7 +249,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Objeto global para armazenar as fotos comprimidas
+        // Array para gerenciar a numeração local das vistorias enviadas
+        let vistoriasSalvasLocal = [];
+
         const fotosArmazenadas = {
             fotoCaixaExterna: "",
             fotoCaixaInterna: "",
@@ -249,7 +262,6 @@
             fotoDg: ""
         };
 
-        // Função para comprimir e redimensionar a foto tirada pela câmera antes de salvar
         window.processarFotoCamera = function(input, chaveFoto, idPreview) {
             const file = input.files[0];
             if (!file) return;
@@ -262,7 +274,6 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // Define largura máxima de 800px mantendo a proporção (deixa o arquivo leve)
                     const MAX_WIDTH = 800;
                     let width = img.width;
                     let height = img.height;
@@ -277,9 +288,7 @@
 
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Converte para JPEG com 70% de qualidade
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
                     fotosArmazenadas[chaveFoto] = dataUrl;
 
                     const preview = document.getElementById(idPreview);
@@ -297,11 +306,15 @@
             botaoEnviar.textContent = "Salvando no sistema...";
             botaoEnviar.disabled = true;
 
+            const protocoloVal = document.getElementById('protocolo').value.trim();
+            const cidadeVal = document.getElementById('cidade').value.trim();
+            const situacaoVal = document.getElementById('situacaoFinal').value;
+
             const dadosFiscalizacao = {
                 tecQualidade: document.getElementById('tecQualidade').value.trim(),
                 estado: document.getElementById('estado').value,
-                cidade: document.getElementById('cidade').value.trim(),
-                protocolo: document.getElementById('protocolo').value.trim(),
+                cidade: cidadeVal,
+                protocolo: protocoloVal,
                 empresa: document.getElementById('empresa').value.trim(),
                 tecExecutante: document.getElementById('tecExecutante').value.trim(),
                 modulo: document.getElementById('vistoriaTipo').value,
@@ -313,7 +326,7 @@
                 ancoragemPimentao: document.getElementById('ancoragemPimentao').value,
                 acabamentoDrop: document.getElementById('acabamentoDrop').value,
                 organizacaoDg: document.getElementById('organizacaoDg').value,
-                situacaoFinal: document.getElementById('situacaoFinal').value,
+                situacaoFinal: situacaoVal,
                 observacoes: document.getElementById('observacoes').value.trim(),
                 dataEnvio: new Date().toLocaleDateString('pt-BR'),
                 timestamp: Date.now(),
@@ -332,6 +345,11 @@
 
             try {
                 await db.collection("fiscalizacoes_modulos").add(dadosFiscalizacao);
+                
+                // Adiciona na lista numerada local
+                vistoriasSalvasLocal.push({ protocolo: protocoloVal, cidade: cidadeVal, situacao: situacaoVal });
+                atualizarListaHistoricoLocal();
+
                 alert("Fiscalização enviada com sucesso!");
                 document.getElementById('formFiscalizacao').reset();
                 document.querySelectorAll('.preview-img').forEach(img => img.style.display = 'none');
@@ -344,6 +362,26 @@
                 botaoEnviar.textContent = "Enviar Fiscalização Completa";
                 botaoEnviar.disabled = false;
             }
+        }
+
+        function atualizarListaHistoricoLocal() {
+            const container = document.getElementById('listaHistoricoLocal');
+            if (vistoriasSalvasLocal.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Nenhuma fiscalização enviada ainda nesta sessão.</p>`;
+                return;
+            }
+
+            let html = "";
+            vistoriasSalvasLocal.forEach((item, index) => {
+                let corStatus = item.situacao === 'APROVADO' ? '#16a34a' : '#dc2626';
+                html += `
+                    <div class="item-historico">
+                        <div><b>#${index + 1}</b> - Protocolo: <b>${item.protocolo}</b> (${item.cidade})</div>
+                        <div style="color: ${corStatus}; font-weight: bold;">${item.situacao}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
     </script>
 </body>
