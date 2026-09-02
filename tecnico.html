@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fiscalização de Protocolos - Técnico de Qualidade</title>
+    <title>Fiscalização de Protocolos - Técnico</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -24,26 +24,19 @@
         .card h3 { margin-top: 0; color: #0f172a; font-size: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
 
         label { display: block; margin-top: 15px; font-weight: 600; font-size: 14px; color: #334155; }
-        input[type="text"], select, textarea { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; transition: all 0.3s; }
-        input[type="text"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        input[type="text"], input[type="password"], input[type="email"], select, textarea { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
         .radio-group { display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap; }
-        .radio-option { display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #e2e8f0; transition: 0.2s; }
-        .radio-option:hover { background: #e2e8f0; }
-        .radio-option input { cursor: pointer; }
-
-        .camera-box { background: #f8fafc; border: 2px dashed #94a3b8; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: center; transition: 0.2s; }
-        .camera-box:hover { border-color: var(--primary); background: #f0f4ff; }
-        .camera-box input[type="file"] { margin-top: 8px; }
-        .preview-img { max-width: 100%; max-height: 180px; margin-top: 10px; border-radius: 6px; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .radio-option { display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid #e2e8f0; }
+        
+        .camera-box { background: #f8fafc; border: 2px dashed #94a3b8; padding: 15px; border-radius: 8px; margin-top: 10px; text-align: center; }
+        .preview-img { max-width: 100%; max-height: 180px; margin-top: 10px; border-radius: 6px; display: none; }
 
         button { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; transition: 0.2s; }
-        .btn-enviar { background: var(--success); color: white; margin-top: 20px; box-shadow: 0 4px 6px rgba(22, 163, 74, 0.2); }
-        .btn-enviar:hover { background: #15803d; }
+        .btn-enviar { background: var(--success); color: white; margin-top: 20px; }
         .btn-voltar { background: var(--text-muted); color: white; width: auto; padding: 8px 15px; font-size: 13px; }
-        .btn-voltar:hover { background: #475569; }
-
-        /* Estilo para a lista de itens salvos na tela do técnico */
+        .hidden { display: none !important; }
         .item-historico { background: #f8fafc; border: 1px solid var(--border); padding: 12px 15px; border-radius: 6px; margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
@@ -51,188 +44,198 @@
 
     <header>
         <div><h2>Fiscalização de Protocolos</h2></div>
-        <button class="btn-voltar" onclick="window.location.href='index.html'">Voltar</button>
+        <button id="btnSairTecnico" class="btn-voltar hidden" onclick="sairTecnico()">Sair / Trocar Conta</button>
     </header>
 
     <div class="container">
-        <form id="formFiscalizacao" onsubmit="enviarFiscalizacao(event)">
+        
+        <!-- TELA DE LOGIN / CADASTRO DO TÉCNICO -->
+        <div id="auth-tecnico-container" class="card">
+            <h3>Identificação do Técnico</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Faça seu login ou cadastre-se para liberar o envio de vistorias (sujeito à aprovação do gestor).</p>
             
-            <!-- DADOS GERAIS -->
-            <div class="card">
-                <h3>1. Informações Gerais</h3>
-                
-                <label>Nome do Técnico de Qualidade:</label>
-                <input type="text" id="tecQualidade" required placeholder="Seu nome completo">
+            <div id="msg-auth" style="color: #dc2626; font-size: 13px; margin-bottom: 10px; font-weight: bold;"></div>
 
-                <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
-                        <label>Estado (UF):</label>
-                        <select id="estado" required>
-                            <option value="RS">RS</option>
-                            <option value="SC">SC</option>
-                            <option value="PR">PR</option>
-                        </select>
-                    </div>
-                    <div style="flex: 2;">
-                        <label>Cidade Fiscalizada:</label>
-                        <input type="text" id="cidade" required placeholder="Ex: Canoas">
-                    </div>
-                </div>
+            <label>Seu Nome Completo:</label>
+            <input type="text" id="cadNome" placeholder="Ex: João da Silva">
 
-                <label>Número do Protocolo:</label>
-                <input type="text" id="protocolo" required placeholder="Ex: 2026001">
+            <label>E-mail (para login):</label>
+            <input type="email" id="cadEmail" placeholder="seu.email@empresa.com">
 
-                <label>Empresa Fiscalizada:</label>
-                <input type="text" id="empresa" required placeholder="Nome da empresa">
+            <label>Sua Senha:</label>
+            <input type="password" id="cadSenha" placeholder="Crie ou digite sua senha">
 
-                <label>Nome do Técnico que Executou o Serviço:</label>
-                <input type="text" id="tecExecutante" required placeholder="Nome do executor">
-            </div>
-
-            <!-- TIPO E SEGURANÇA -->
-            <div class="card">
-                <h3>2. Tipo de Vistoria & Segurança</h3>
-
-                <label>Tipo de Vistoria:</label>
-                <select id="vistoriaTipo" required>
-                    <option value="FTTH">FTTH</option>
-                    <option value="FTTB">FTTB</option>
-                    <option value="FTTA">FTTA</option>
-                    <option value="FTTX">FTTX</option>
-                </select>
-
-                <label>APR - Análise Preliminar de Risco:</label>
-                <div class="radio-group">
-                    <label class="radio-option"><input type="radio" name="apr" value="Trabalho em altura" required> Trabalho em altura</label>
-                    <label class="radio-option"><input type="radio" name="apr" value="Não ha atividade de risco"> Não há atividade de risco</label>
-                </div>
-            </div>
-
-            <!-- CAIXA E DROP -->
-            <div class="card">
-                <h3>3. Caixa e Lançamento de Drop</h3>
-
-                <label>Organização da C.A?</label>
-                <div class="radio-group">
-                    <label class="radio-option"><input type="radio" name="orgCa" value="APROVADO" required> APROVADO</label>
-                    <label class="radio-option"><input type="radio" name="orgCa" value="REPROVADO"> REPROVADO</label>
-                </div>
-
-                <label>Foto da Caixa Externa:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaExterna', 'previewCaixaExt')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewCaixaExt" class="preview-img">
-                </div>
-
-                <label>Foto da Caixa Interna:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaInterna', 'previewCaixaInt')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewCaixaInt" class="preview-img">
-                </div>
-
-                <label style="margin-top: 20px;">Lançamento do Drop está correto?</label>
-                <div class="radio-group">
-                    <label class="radio-option"><input type="radio" name="dropCorreto" value="APROVADO" required> APROVADO</label>
-                    <label class="radio-option"><input type="radio" name="dropCorreto" value="REPROVADO"> REPROVADO</label>
-                </div>
-
-                <label>Foto Lançamento do Drop:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDrop', 'previewDrop')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewDrop" class="preview-img">
-                </div>
-            </div>
-
-            <!-- ANCORAGEM E ACABAMENTO -->
-            <div class="card">
-                <h3>4. Ancoragem e Acabamento</h3>
-
-                <label>Ancoragem da alça pré-formada na roldana (Poste Celesc e Residência):</label>
-                <select id="ancoragemRoldana" required>
-                    <option value="APROVADO">APROVADO</option>
-                    <option value="REPROVADO">REPROVADO</option>
-                    <option value="N/A (FTTA)">N/A (FTTA)</option>
-                </select>
-
-                <label>Foto da Ancoragem na Roldana:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemRoldana', 'previewRoldana')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewRoldana" class="preview-img">
-                </div>
-
-                <label style="margin-top: 20px;">Ancoragem do cabo no pimentão (Residência):</label>
-                <select id="ancoragemPimentao" required>
-                    <option value="APROVADO">APROVADO</option>
-                    <option value="REPROVADO">REPROVADO</option>
-                    <option value="N/A (FTTA)">N/A (FTTA)</option>
-                </select>
-
-                <label>Foto da Ancoragem no Pimentão:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemPimentao', 'previewPimentao')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewPimentao" class="preview-img">
-                </div>
-
-                <label style="margin-top: 20px;">Acabamento do Drop (Placa de identificação, espiral caixa):</label>
-                <select id="acabamentoDrop" required>
-                    <option value="APROVADO">APROVADO</option>
-                    <option value="REPROVADO">REPROVADO</option>
-                </select>
-
-                <label>Foto do Acabamento do Drop:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAcabamentoDrop', 'previewAcabamento')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewAcabamento" class="preview-img">
-                </div>
-            </div>
-
-            <!-- DG E CONCLUSÃO -->
-            <div class="card">
-                <h3>5. DG e Conclusão da Vistoria</h3>
-
-                <label>Organização do DG:</label>
-                <select id="organizacaoDg" required>
-                    <option value="APROVADO">APROVADO</option>
-                    <option value="REPROVADO">REPROVADO</option>
-                    <option value="N/A">N/A</option>
-                </select>
-
-                <label>Foto da Organização do DG:</label>
-                <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDg', 'previewDg')">
-                    <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
-                    <img id="previewDg" class="preview-img">
-                </div>
-
-                <label style="margin-top: 20px;">Situação Final da Vistoria:</label>
-                <select id="situacaoFinal" required style="font-weight: bold; color: #0f172a;">
-                    <option value="APROVADO">APROVADO</option>
-                    <option value="PENDENCIA-REFAZER">PENDENCIA-REFAZER</option>
-                </select>
-
-                <label>Observações Finais (Caso pendência, descreva os motivos identificados):</label>
-                <textarea id="observacoes" rows="4" placeholder="Descreva observações ou motivos de pendências se houver..."></textarea>
-            </div>
-
-            <button type="submit" class="btn-enviar">Enviar Fiscalização Completa</button>
-        </form>
-
-        <!-- CARD DE VISTORIAS ENVIADAS RECENTEMENTE COM NUMERAÇÃO -->
-        <div class="card" style="margin-top: 30px;">
-            <h3>Suas Fiscalizações Enviadas (Nesta Sessão)</h3>
-            <div id="listaHistoricoLocal">
-                <p style="color: var(--text-muted); font-size: 13px;">Nenhuma fiscalização enviada ainda nesta sessão.</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="fazerLoginTecnico()" style="background: var(--primary); color: white; flex: 1;">Entrar</button>
+                <button type="button" onclick="cadastrarTecnico()" style="background: #0f172a; color: white; flex: 1;">Criar Cadastro</button>
             </div>
         </div>
+
+        <!-- TELA DO FORMULÁRIO DE VISTORIA (OCULTA ATÉ LOGAR E SER APROVADO) -->
+        <div id="form-tecnico-container" class="hidden">
+            <div class="card" style="background: #f0fdf4; border-left-color: var(--success); padding: 12px 20px;">
+                <span id="infoTecnicoLogado" style="font-weight: bold; color: #166534;"></span>
+            </div>
+
+            <form id="formFiscalizacao" onsubmit="enviarFiscalizacao(event)">
+                
+                <div class="card">
+                    <h3>1. Informações Gerais</h3>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label>Estado (UF):</label>
+                            <select id="estado" required>
+                                <option value="RS">RS</option>
+                                <option value="SC">SC</option>
+                                <option value="PR">PR</option>
+                            </select>
+                        </div>
+                        <div style="flex: 2;">
+                            <label>Cidade Fiscalizada:</label>
+                            <input type="text" id="cidade" required placeholder="Ex: Canoas">
+                        </div>
+                    </div>
+
+                    <label>Número do Protocolo:</label>
+                    <input type="text" id="protocolo" required placeholder="Ex: 2026001">
+
+                    <label>Empresa Fiscalizada:</label>
+                    <input type="text" id="empresa" required placeholder="Nome da empresa">
+
+                    <label>Nome do Técnico que Executou o Serviço:</label>
+                    <input type="text" id="tecExecutante" required placeholder="Nome do executor">
+                </div>
+
+                <div class="card">
+                    <h3>2. Tipo de Vistoria & Segurança</h3>
+                    <label>Tipo de Vistoria:</label>
+                    <select id="vistoriaTipo" required>
+                        <option value="FTTH">FTTH</option>
+                        <option value="FTTB">FTTB</option>
+                        <option value="FTTA">FTTA</option>
+                        <option value="FTTX">FTTX</option>
+                    </select>
+
+                    <label>APR - Análise Preliminar de Risco:</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="apr" value="Trabalho em altura" required> Trabalho em altura</label>
+                        <label class="radio-option"><input type="radio" name="apr" value="Não ha atividade de risco"> Não há atividade de risco</label>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>3. Caixa e Lançamento de Drop</h3>
+                    <label>Organização da C.A?</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="orgCa" value="APROVADO" required> APROVADO</label>
+                        <label class="radio-option"><input type="radio" name="orgCa" value="REPROVADO"> REPROVADO</label>
+                    </div>
+
+                    <label>Foto da Caixa Externa:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaExterna', 'previewCaixaExt')">
+                        <img id="previewCaixaExt" class="preview-img">
+                    </div>
+
+                    <label>Foto da Caixa Interna:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaInterna', 'previewCaixaInt')">
+                        <img id="previewCaixaInt" class="preview-img">
+                    </div>
+
+                    <label style="margin-top: 20px;">Lançamento do Drop está correto?</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="dropCorreto" value="APROVADO" required> APROVADO</label>
+                        <label class="radio-option"><input type="radio" name="dropCorreto" value="REPROVADO"> REPROVADO</label>
+                    </div>
+
+                    <label>Foto Lançamento do Drop:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDrop', 'previewDrop')">
+                        <img id="previewDrop" class="preview-img">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>4. Ancoragem e Acabamento</h3>
+                    <label>Ancoragem da alça pré-formada na roldana:</label>
+                    <select id="ancoragemRoldana" required>
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="REPROVADO">REPROVADO</option>
+                        <option value="N/A (FTTA)">N/A (FTTA)</option>
+                    </select>
+
+                    <label>Foto da Ancoragem na Roldana:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemRoldana', 'previewRoldana')">
+                        <img id="previewRoldana" class="preview-img">
+                    </div>
+
+                    <label style="margin-top: 20px;">Ancoragem do cabo no pimentão:</label>
+                    <select id="ancoragemPimentao" required>
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="REPROVADO">REPROVADO</option>
+                        <option value="N/A (FTTA)">N/A (FTTA)</option>
+                    </select>
+
+                    <label>Foto da Ancoragem no Pimentão:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemPimentao', 'previewPimentao')">
+                        <img id="previewPimentao" class="preview-img">
+                    </div>
+
+                    <label style="margin-top: 20px;">Acabamento do Drop:</label>
+                    <select id="acabamentoDrop" required>
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="REPROVADO">REPROVADO</option>
+                    </select>
+
+                    <label>Foto do Acabamento do Drop:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAcabamentoDrop', 'previewAcabamento')">
+                        <img id="previewAcabamento" class="preview-img">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>5. DG e Conclusão da Vistoria</h3>
+                    <label>Organização do DG:</label>
+                    <select id="organizacaoDg" required>
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="REPROVADO">REPROVADO</option>
+                        <option value="N/A">N/A</option>
+                    </select>
+
+                    <label>Foto da Organização do DG:</label>
+                    <div class="camera-box">
+                        <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDg', 'previewDg')">
+                        <img id="previewDg" class="preview-img">
+                    </div>
+
+                    <label style="margin-top: 20px;">Situação Final da Vistoria:</label>
+                    <select id="situacaoFinal" required style="font-weight: bold; color: #0f172a;">
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="PENDENCIA-REFAZER">PENDENCIA-REFAZER</option>
+                    </select>
+
+                    <label>Observações Finais:</label>
+                    <textarea id="observacoes" rows="4" placeholder="Descreva observações ou motivos de pendências se houver..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-enviar">Enviar Fiscalização Completa</button>
+            </form>
+
+            <div class="card" style="margin-top: 30px;">
+                <h3>Suas Fiscalizações Enviadas (Nesta Sessão)</h3>
+                <div id="listaHistoricoLocal">
+                    <p style="color: var(--text-muted); font-size: 13px;">Nenhuma fiscalização enviada ainda nesta sessão.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- SDKs do Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -249,23 +252,117 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Array para gerenciar a numeração local das vistorias enviadas
         let vistoriasSalvasLocal = [];
+        let tecnicoLogadoInfo = JSON.parse(localStorage.getItem('tecnicoLogadoInfo')) || null;
 
-        const fotosArmazenadas = {
-            fotoCaixaExterna: "",
-            fotoCaixaInterna: "",
-            fotoDrop: "",
-            fotoAncoragemRoldana: "",
-            fotoAncoragemPimentao: "",
-            fotoAcabamentoDrop: "",
-            fotoDg: ""
-        };
+        if (tecnicoLogadoInfo) {
+            verificarStatusEEntrar(tecnicoLogadoInfo);
+        }
+
+        window.cadastrarTecnico = async function() {
+            const nome = document.getElementById('cadNome').value.trim();
+            const email = document.getElementById('cadEmail').value.trim().toLowerCase();
+            const senha = document.getElementById('cadSenha').value.trim();
+            const msg = document.getElementById('msg-auth');
+
+            if (!nome || !email || !senha) {
+                msg.textContent = "Preencha todos os campos para cadastrar!";
+                return;
+            }
+
+            try {
+                // Verifica se o e-mail já existe
+                const query = await db.collection("usuarios_sistema").where("email", "==", email).get();
+                if (!query.empty) {
+                    msg.textContent = "Este e-mail já está cadastrado. Tente entrar!";
+                    return;
+                }
+
+                await db.collection("usuarios_sistema").add({
+                    nome: nome,
+                    email: email,
+                    senha: senha,
+                    status: "pendente",
+                    criadoEm: Date.now()
+                });
+
+                msg.style.color = "var(--success)";
+                msg.textContent = "Cadastro realizado! Aguarde a aprovação do gestor para acessar.";
+            } catch (e) {
+                console.error(e);
+                msg.textContent = "Erro ao cadastrar. Tente novamente.";
+            }
+        }
+
+        window.fazerLoginTecnico = async function() {
+            const email = document.getElementById('cadEmail').value.trim().toLowerCase();
+            const senha = document.getElementById('cadSenha').value.trim();
+            const msg = document.getElementById('msg-auth');
+
+            if (!email || !senha) {
+                msg.textContent = "Informe e-mail e senha.";
+                return;
+            }
+
+            try {
+                const query = await db.collection("usuarios_sistema").where("email", "==", email).get();
+                if (query.empty) {
+                    msg.textContent = "E-mail não encontrado. Faça seu cadastro!";
+                    return;
+                }
+
+                let userDoc = null;
+                query.forEach(doc => { userDoc = { id: doc.id, ...doc.data() }; });
+
+                if (userDoc.senha !== senha) {
+                    msg.textContent = "Senha incorreta!";
+                    return;
+                }
+
+                if (userDoc.status !== "aprovado") {
+                    msg.textContent = `Seu acesso está com status: "${userDoc.status}". Aguarde o gestor aprovar.`;
+                    return;
+                }
+
+                localStorage.setItem('tecnicoLogadoInfo', JSON.stringify(userDoc));
+                verificarStatusEEntrar(userDoc);
+            } catch (e) {
+                console.error(e);
+                msg.textContent = "Erro ao fazer login.";
+            }
+        }
+
+        async function verificarStatusEEntrar(u) {
+            try {
+                const docRef = await db.collection("usuarios_sistema").doc(u.id).get();
+                if (!docRef.exists || docRef.data().status !== "aprovado") {
+                    localStorage.removeItem('tecnicoLogadoInfo');
+                    document.getElementById('auth-tecnico-container').classList.remove('hidden');
+                    document.getElementById('form-tecnico-container').classList.add('hidden');
+                    document.getElementById('btnSairTecnico').classList.add('hidden');
+                    document.getElementById('msg-auth').textContent = "Seu acesso foi revogado ou ainda está pendente.";
+                    return;
+                }
+
+                document.getElementById('auth-tecnico-container').classList.add('hidden');
+                document.getElementById('form-tecnico-container').classList.remove('hidden');
+                document.getElementById('btnSairTecnico').classList.remove('hidden');
+                document.getElementById('infoTecnicoLogado').textContent = `Técnico Logado: ${docRef.data().nome}`;
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        window.sairTecnico = function() {
+            localStorage.removeItem('tecnicoLogadoInfo');
+            location.reload();
+        }
+
+        const fotosArmazenadas = { fotoCaixaExterna: "", fotoCaixaInterna: "", fotoDrop: "", fotoAncoragemRoldana: "", fotoAncoragemPimentao: "", fotoAcabamentoDrop: "", fotoDg: "" };
 
         window.processarFotoCamera = function(input, chaveFoto, idPreview) {
             const file = input.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -273,27 +370,15 @@
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-
                     const MAX_WIDTH = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH) {
-                        height = Math.round((height * MAX_WIDTH) / width);
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-
+                    let width = img.width, height = img.height;
+                    if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                     fotosArmazenadas[chaveFoto] = dataUrl;
-
                     const preview = document.getElementById(idPreview);
-                    preview.src = dataUrl;
-                    preview.style.display = 'block';
+                    preview.src = dataUrl; preview.style.display = 'block';
                 };
             };
             reader.readAsDataURL(file);
@@ -301,9 +386,11 @@
 
         window.enviarFiscalizacao = async function(event) {
             event.preventDefault();
+            const tecnicoInfo = JSON.parse(localStorage.getItem('tecnicoLogadoInfo'));
+            if (!tecnicoInfo) { alert("Sessão expirada."); location.reload(); return; }
 
             const botaoEnviar = document.querySelector('.btn-enviar');
-            botaoEnviar.textContent = "Salvando no sistema...";
+            botaoEnviar.textContent = "Salvando...";
             botaoEnviar.disabled = true;
 
             const protocoloVal = document.getElementById('protocolo').value.trim();
@@ -311,7 +398,8 @@
             const situacaoVal = document.getElementById('situacaoFinal').value;
 
             const dadosFiscalizacao = {
-                tecQualidade: document.getElementById('tecQualidade').value.trim(),
+                tecQualidade: tecnicoInfo.nome,
+                tecnicoId: tecnicoInfo.id,
                 estado: document.getElementById('estado').value,
                 cidade: cidadeVal,
                 protocolo: protocoloVal,
@@ -345,19 +433,16 @@
 
             try {
                 await db.collection("fiscalizacoes_modulos").add(dadosFiscalizacao);
-                
-                // Adiciona na lista numerada local
                 vistoriasSalvasLocal.push({ protocolo: protocoloVal, cidade: cidadeVal, situacao: situacaoVal });
                 atualizarListaHistoricoLocal();
-
                 alert("Fiscalização enviada com sucesso!");
                 document.getElementById('formFiscalizacao').reset();
                 document.querySelectorAll('.preview-img').forEach(img => img.style.display = 'none');
                 Object.keys(fotosArmazenadas).forEach(k => fotosArmazenadas[k] = "");
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (error) {
-                console.error("Erro ao enviar fiscalização: ", error);
-                alert("Erro ao enviar fiscalização. Verifique sua conexão ou o tamanho das fotos.");
+                console.error(error);
+                alert("Erro ao enviar fiscalização.");
             } finally {
                 botaoEnviar.textContent = "Enviar Fiscalização Completa";
                 botaoEnviar.disabled = false;
@@ -370,7 +455,6 @@
                 container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Nenhuma fiscalização enviada ainda nesta sessão.</p>`;
                 return;
             }
-
             let html = "";
             vistoriasSalvasLocal.forEach((item, index) => {
                 let corStatus = item.situacao === 'APROVADO' ? '#16a34a' : '#dc2626';
