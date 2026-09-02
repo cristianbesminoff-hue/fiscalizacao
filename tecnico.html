@@ -7,7 +7,6 @@
     <style>
         :root {
             --primary: #2563eb;
-            --primary-dark: #1d4ed8;
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #1e293b;
@@ -81,7 +80,7 @@
                 <input type="text" id="protocolo" required placeholder="Ex: 2026001">
 
                 <label>Empresa Fiscalizada:</label>
-                <input type="text" id="empresa" required placeholder="Nome da empresa terceirizada/parceira">
+                <input type="text" id="empresa" required placeholder="Nome da empresa">
 
                 <label>Nome do Técnico que Executou o Serviço:</label>
                 <input type="text" id="tecExecutante" required placeholder="Nome do executor">
@@ -118,14 +117,14 @@
 
                 <label>Foto da Caixa Externa:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoCaixaExterna', 'previewCaixaExt')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaExterna', 'previewCaixaExt')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewCaixaExt" class="preview-img">
                 </div>
 
                 <label>Foto da Caixa Interna:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoCaixaInterna', 'previewCaixaInt')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoCaixaInterna', 'previewCaixaInt')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewCaixaInt" class="preview-img">
                 </div>
@@ -138,7 +137,7 @@
 
                 <label>Foto Lançamento do Drop:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoDrop', 'previewDrop')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDrop', 'previewDrop')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewDrop" class="preview-img">
                 </div>
@@ -157,7 +156,7 @@
 
                 <label>Foto da Ancoragem na Roldana:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoAncoragemRoldana', 'previewRoldana')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemRoldana', 'previewRoldana')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewRoldana" class="preview-img">
                 </div>
@@ -171,7 +170,7 @@
 
                 <label>Foto da Ancoragem no Pimentão:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoAncoragemPimentao', 'previewPimentao')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAncoragemPimentao', 'previewPimentao')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewPimentao" class="preview-img">
                 </div>
@@ -184,7 +183,7 @@
 
                 <label>Foto do Acabamento do Drop:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoAcabamentoDrop', 'previewAcabamento')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoAcabamentoDrop', 'previewAcabamento')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewAcabamento" class="preview-img">
                 </div>
@@ -203,7 +202,7 @@
 
                 <label>Foto da Organização do DG:</label>
                 <div class="camera-box">
-                    <input type="file" accept="image/*" capture="environment" onchange="converterFoto(this, 'fotoDg', 'previewDg')">
+                    <input type="file" accept="image/*" capture="environment" onchange="processarFotoCamera(this, 'fotoDg', 'previewDg')">
                     <small style="color: var(--text-muted); display: block;">Tirar foto com a câmera</small>
                     <img id="previewDg" class="preview-img">
                 </div>
@@ -239,7 +238,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Objeto global para armazenar as fotos convertidas em Base64
+        // Objeto global para armazenar as fotos comprimidas
         const fotosArmazenadas = {
             fotoCaixaExterna: "",
             fotoCaixaInterna: "",
@@ -250,26 +249,52 @@
             fotoDg: ""
         };
 
-        // Função genérica para converter arquivos de imagem da câmera em Base64 e exibir preview
-        window.converterFoto = function(input, chaveFoto, idPreview) {
+        // Função para comprimir e redimensionar a foto tirada pela câmera antes de salvar
+        window.processarFotoCamera = function(input, chaveFoto, idPreview) {
             const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    fotosArmazenadas[chaveFoto] = e.target.result;
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Define largura máxima de 800px mantendo a proporção (deixa o arquivo leve)
+                    const MAX_WIDTH = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height = Math.round((height * MAX_WIDTH) / width);
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Converte para JPEG com 70% de qualidade
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                    fotosArmazenadas[chaveFoto] = dataUrl;
+
                     const preview = document.getElementById(idPreview);
-                    preview.src = e.target.result;
+                    preview.src = dataUrl;
                     preview.style.display = 'block';
                 };
-                reader.readAsDataURL(file);
-            }
+            };
+            reader.readAsDataURL(file);
         }
 
         window.enviarFiscalizacao = async function(event) {
             event.preventDefault();
 
             const botaoEnviar = document.querySelector('.btn-enviar');
-            botaoEnviar.textContent = "Enviando dados e fotos...";
+            botaoEnviar.textContent = "Salvando no sistema...";
             botaoEnviar.disabled = true;
 
             const dadosFiscalizacao = {
@@ -279,7 +304,7 @@
                 protocolo: document.getElementById('protocolo').value.trim(),
                 empresa: document.getElementById('empresa').value.trim(),
                 tecExecutante: document.getElementById('tecExecutante').value.trim(),
-                modulo: document.getElementById('vistoriaTipo').value, // Mantido como 'modulo' para compatibilidade com o Painel do Gestor
+                modulo: document.getElementById('vistoriaTipo').value,
                 vistoriaTipo: document.getElementById('vistoriaTipo').value,
                 apr: document.querySelector('input[name="apr"]:checked')?.value || "",
                 orgCa: document.querySelector('input[name="orgCa"]:checked')?.value || "",
@@ -309,13 +334,12 @@
                 await db.collection("fiscalizacoes_modulos").add(dadosFiscalizacao);
                 alert("Fiscalização enviada com sucesso!");
                 document.getElementById('formFiscalizacao').reset();
-                // Oculta todos os previews de fotos
                 document.querySelectorAll('.preview-img').forEach(img => img.style.display = 'none');
                 Object.keys(fotosArmazenadas).forEach(k => fotosArmazenadas[k] = "");
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (error) {
                 console.error("Erro ao enviar fiscalização: ", error);
-                alert("Erro ao enviar fiscalização: " + error.message);
+                alert("Erro ao enviar fiscalização. Verifique sua conexão ou o tamanho das fotos.");
             } finally {
                 botaoEnviar.textContent = "Enviar Fiscalização Completa";
                 botaoEnviar.disabled = false;
