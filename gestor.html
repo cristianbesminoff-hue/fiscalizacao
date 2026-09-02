@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Gestor - Vistorias</title>
-    <!-- Biblioteca para gerar PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; }
         header { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -19,7 +17,7 @@
         .btn-aprovar { background: #16a34a; color: white; }
         .btn-rejeitar { background: #dc2626; color: white; }
         .btn-excluir { background: #7f1d1d; color: white; }
-        .btn-pdf { background: #2563eb; color: white; }
+        .btn-imprimir { background: #2563eb; color: white; }
         .btn-voltar { background: #64748b; color: white; padding: 8px 15px; }
         .hidden { display: none; }
         .status-pendente { color: #d97706; font-weight: bold; }
@@ -28,9 +26,17 @@
         .vistoria-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 15px; border-radius: 6px; }
         .fotos-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .foto-item { background: #fff; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
-        .foto-item img { max-width: 120px; max-height: 120px; border-radius: 4px; display: block; cursor: pointer; }
+        .foto-item img { max-width: 150px; max-height: 150px; border-radius: 4px; display: block; }
         .erro { color: #dc2626; text-align: center; margin-bottom: 10px; }
         .acoes-vistoria { margin-top: 12px; display: flex; gap: 8px; }
+
+        /* Estilo exclusivo otimizado para a folha de Impressão/PDF nativa */
+        @media print {
+            body { background: white; color: black; }
+            header, .acoes-vistoria, .card:not(:has(#print-container)), #login-gestor-container, #painel-gestor-container > header, .container > .card:first-child, div[style*="margin-bottom: 15px;"] { display: none !important; }
+            .vistoria-box { border: none; background: white; padding: 0; margin: 0; width: 100%; }
+            .foto-item img { max-width: 200px; max-height: 200px; }
+        }
     </style>
 </head>
 <body>
@@ -42,7 +48,7 @@
             <h2>Acesso do Gestor</h2>
             <div id="erro-gestor" class="erro"></div>
             <label>E-mail:</label>
-            <input type="email" id="gestor-email" placeholder="seu-email@dominio.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <input type="email" id="gestor-email" placeholder="gestor@admin.com" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <label>Senha:</label>
             <input type="password" id="gestor-senha" placeholder="Senha" style="width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 4px;">
             <button onclick="fazerLoginGestor()" style="background: #2563eb; color: white; width: 100%; padding: 12px;">Entrar no Painel</button>
@@ -103,8 +109,7 @@
             const senha = document.getElementById('gestor-senha').value.trim();
             const erroDiv = document.getElementById('erro-gestor');
 
-            // Substitua "seu-email@dominio.com" e "sua_senha" pelo seu acesso real se preferir
-            if ((email === "gestor@admin.com" || email === "cristian.besminoff@gmail.com" || email !== "") && senha === "admin123") {
+            if (email === "gestor@admin.com" && senha === "admin123") {
                 localStorage.setItem('gestorLogado', 'true');
                 liberarPainelGestor();
             } else {
@@ -197,7 +202,6 @@
             lista.forEach(i => {
                 let corSituacao = i.situacaoFinal === 'APROVADO' ? 'status-aprovado' : 'status-rejeitado';
                 
-                // Varre as fotos e numera sequencialmente (1, 2, 3...)
                 let fotosHtml = "";
                 if (i.detalhesModulo && i.detalhesModulo.fotos) {
                     const fotosObj = i.detalhesModulo.fotos;
@@ -210,7 +214,7 @@
                             fotosHtml += `
                                 <div class="foto-item">
                                     <small><b>Foto ${contadorFoto}</b> (${chave})</small><br>
-                                    <img src="${fotosObj[chave]}" alt="Foto ${contadorFoto}" onclick="window.open(this.src)">
+                                    <img src="${fotosObj[chave]}" alt="Foto ${contadorFoto}">
                                 </div>
                             `;
                             contadorFoto++;
@@ -232,17 +236,19 @@
 
                 html += `
                     <div class="vistoria-box" id="vistoria-${i.id}">
-                        <b>Módulo:</b> ${i.modulo} | <b>Protocolo:</b> ${i.protocolo} | <b>Cidade:</b> ${i.cidade}/${i.estado}<br>
-                        <b>Técnico Qualidade:</b> ${i.tecQualidade || i.nomeUsuarioLogado} | <b>Empresa:</b> ${i.empresa || 'N/A'}<br>
-                        <b>Situação Final:</b> <span class="${corSituacao}">${i.situacaoFinal}</span> | <b>Data:</b> ${i.dataEnvio || 'N/A'}<br>
-                        <div style="font-size: 12px; color: #475569; margin-top: 5px;">${detalhesTexto}</div>
+                        <h3>Relatório de Vistoria - Protocolo: ${i.protocolo || 'N/A'}</h3>
+                        <b>Módulo:</b> ${i.modulo || 'N/A'} | <b>Cidade:</b> ${i.cidade || 'N/A'}/${i.estado || ''}<br>
+                        <b>Técnico Qualidade:</b> ${i.tecQualidade || i.nomeUsuarioLogado || 'N/A'} | <b>Empresa:</b> ${i.empresa || 'N/A'}<br>
+                        <b>Situação Final:</b> <span class="${corSituacao}">${i.situacaoFinal || 'N/A'}</span> | <b>Data:</b> ${i.dataEnvio || 'N/A'}<br>
+                        <div style="font-size: 13px; color: #475569; margin-top: 8px;">${detalhesTexto}</div>
                         ${i.observacoes ? `<div style="margin-top: 5px;"><b>Obs:</b> ${i.observacoes}</div>` : ''}
                         ${fotosHtml}
                         <div class="acoes-vistoria">
-                            <button class="btn-pdf" onclick="gerarPdfVistoria('${i.id}', '${i.protocolo}')">Baixar PDF</button>
+                            <button class="btn-imprimir" onclick="imprimirVistoria('${i.id}')">Imprimir / Salvar em PDF</button>
                             <button class="btn-excluir" onclick="excluirVistoria('${i.id}')">Excluir do Sistema</button>
                         </div>
                     </div>
+                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #cbd5e1;">
                 `;
             });
             container.innerHTML = html;
@@ -258,28 +264,42 @@
             renderizarListaVistorias(filtradas);
         }
 
-        // Função para gerar PDF sem cortes, dimensionado perfeitamente para A4
-        window.gerarPdfVistoria = function(idDoc, protocolo) {
+        // Função nativa para abrir a janela de impressão do relatório individual
+        window.imprimirVistoria = function(idDoc) {
             const elemento = document.getElementById(`vistoria-${idDoc}`);
-            const opt = {
-                margin:       [5, 5, 5, 5], // Margens compactas em milímetros
-                filename:     `Vistoria_Protocolo_${protocolo || idDoc}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2,           
-                    useCORS: true,      
-                    letterRendering: true,
-                    windowWidth: 800    // Força a largura de renderização perfeita para A4
-                },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+            if (!elemento) return;
 
-            const botoesAcao = elemento.querySelector('.acoes-vistoria');
-            if (botoesAcao) botoesAcao.style.display = 'none';
-
-            html2pdf().from(elemento).set(opt).save().then(() => {
-                if (botoesAcao) botoesAcao.style.display = 'flex';
-            });
+            // Cria uma janela temporária limpa só com o conteúdo da vistoria selecionada
+            const janelaPrint = window.open('', '_blank', 'width=800,height=600');
+            janelaPrint.document.write(`
+                <html>
+                <head>
+                    <title>Imprimir Vistoria</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #1e293b; }
+                        .vistoria-box { background: white; padding: 15px; border-radius: 6px; }
+                        .fotos-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+                        .foto-item { background: #fff; padding: 5px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; }
+                        .foto-item img { max-width: 180px; max-height: 180px; border-radius: 4px; display: block; }
+                        .status-aprovado { color: #16a34a; font-weight: bold; }
+                        .status-rejeitado { color: #dc2626; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    ${elemento.innerHTML}
+                    <script>
+                        // Remove os botões de ação de dentro da janela de impressão impressa
+                        setTimeout(() => {
+                            const acoes = document.querySelectorAll('.acoes-vistoria');
+                            acoes.forEach(el => el.remove());
+                            window.print();
+                            window.close();
+                        }, 500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            janelaPrint.document.close();
         }
 
         // Função para excluir a vistoria do banco
